@@ -1,0 +1,511 @@
+<!--
+  Design summary:
+  - Tailwind CLI build replaces CDN + tokenized palette / type scale
+  - Lucide icons and a restrained motion layer applied to hero/feature/FAQ
+  - No backend or auth logic changed
+-->
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+        <title>Craftnet - Discover, Earn, and Showcase Your Work</title>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
+        <link rel="stylesheet" href="dist/output.css">
+        <link rel="stylesheet" href="dark-mode.css">
+        <link rel="stylesheet" href="mobile-responsive.css">
+        <script src="https://unpkg.com/lucide@latest"></script>
+        <style>
+            .hero-bg {
+                background-color: #f8f9fa;
+                background-image: radial-gradient(#e0e0e0 1px, transparent 1px);
+                background-size: 20px 20px;
+            }
+            .faq-item {
+                transition: all var(--motion-duration-base) var(--motion-ease-out);
+            }
+            .faq-item.active .faq-content {
+                max-height: 1000px;
+                opacity: 1;
+                padding-top: 0.75rem;
+            }
+            .faq-content {
+                max-height: 0;
+                opacity: 0;
+                overflow: hidden;
+                transition: max-height var(--motion-duration-base) var(--motion-ease-out), opacity var(--motion-duration-base) var(--motion-ease-out), padding-top var(--motion-duration-base) var(--motion-ease-out);
+            }
+            .home-header {
+                position: sticky;
+                top: 0;
+                z-index: 50;
+            }
+        </style>
+    </head>
+    <!--
+  Design notes:
+  - Hero, trust strip, and featured jobs section restyled to the warm pastel marketplace direction.
+  - The illustration is a custom flat SVG inspired by Storyset-style remote-work art and recolored to the Craftnet palette.
+  - Trust strip uses placeholder wordmarks because no partner logos are available yet.
+  - Copy is intentionally product-safe placeholder copy pending final launch content approval.
+-->
+<body class="bg-cream text-ink home-page">
+        <header class="home-header sticky top-0 z-50 border-b border-[#E9E0D3] bg-cream/95 backdrop-blur-sm">
+            <div class="container mx-auto flex items-center justify-between px-4 py-4 sm:px-6 sm:py-5">
+                <a href="index.html" class="flex items-center gap-3" aria-label="Craftnet home">
+                    <div class="home-logo flex h-11 w-11 items-center justify-center rounded-2xl bg-navy text-cream shadow-card">
+                        <svg version="1.0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300.000000 300.000000" preserveAspectRatio="xMidYMid meet" fill="currentColor" class="h-6 w-6" aria-hidden="true">
+                            <g transform="translate(0.000000,300.000000) scale(0.100000,-0.100000)" fill="currentColor" stroke="none">
+                                <path d="M539 1931 c-153 -50 -269 -212 -269 -375 0 -67 24 -156 55 -211 36 -60 116 -132 183 -163 50 -24 69 -27 162 -27 99 0 110 2 171 32 196 97 281 340 189 537 -35 74 -112 151 -187 188 -57 28 -78 33 -157 35 -68 2 -105 -2 -147 -16z m241 -57 c142 -46 241 -199 227 -352 -12 -124 -83 -229 -193 -283 -55 -28 -76 -32 -137 -32 -136 1 -250 71 -313 193 -26 49 -29 65 -29 150 0 89 2 99 34 158 84 155 244 220 411 166z"/>
+                                <path d="M627 1822 c-22 -24 -21 -57 3 -109 33 -73 75 -47 97 58 11 54 -64 91 -100 51z m63 -27 c12 -15 6 -49 -13 -73 -8 -11 -13 -9 -23 10 -17 30 -17 65 -1 71 20 9 24 8 37 -8z"/>
+                                <path d="M449 1726 c-14 -29 -2 -51 34 -62 12 -3 34 -18 49 -32 23 -21 30 -23 43 -12 14 12 13 16 -14 44 -16 17 -31 42 -33 56 -2 20 -9 26 -35 28 -27 3 -35 -1 -44 -22z"/>
+                            </g>
+                        </svg>
+                    </div>
+                    <span class="text-lg font-semibold tracking-tight text-ink">Craftnet</span>
+                </a>
+
+                <nav class="hidden items-center gap-7 md:flex desktop-nav">
+                    <a href="#features" class="text-sm font-medium text-ink/75 hover:text-ink">Features</a>
+                    <a href="#faq" class="text-sm font-medium text-ink/75 hover:text-ink">FAQ</a>
+                </nav>
+
+                <div class="header-actions hidden items-center gap-3 md:flex">
+                    <button id="dark-mode-toggle" class="dark-mode-toggle" aria-label="Toggle dark mode" title="Toggle dark mode"></button>
+                    <a href="login-supabase.html" class="text-sm font-semibold text-ink/80 hover:text-ink">Log In</a>
+                    <a href="signup-member-supabase.html" id="signup-member-link" class="inline-flex items-center justify-center rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-cream shadow-card hover:bg-navy min-h-[44px]">Sign Up</a>
+                </div>
+
+                <div class="header-actions flex items-center gap-2 md:hidden">
+                    <button id="dark-mode-toggle-mobile" class="dark-mode-toggle" aria-label="Toggle dark mode" title="Toggle dark mode"></button>
+                    <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Toggle menu">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div id="mobile-nav-overlay" class="mobile-nav-overlay"></div>
+
+        <div id="mobile-nav-drawer" class="mobile-nav-drawer">
+            <div class="mobile-nav-header">
+                <span class="font-bold text-lg text-ink">Menu</span>
+                <button id="mobile-nav-close" class="mobile-nav-close" aria-label="Close menu">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <nav class="mobile-nav-menu">
+                <a href="#features" class="mobile-nav-item">Features</a>
+                <a href="#faq" class="mobile-nav-item">FAQ</a>
+                <a href="login-supabase.html" class="mobile-nav-item">Log In</a>
+                <a href="signup-member-supabase.html" id="mobile-signup-link" class="mobile-nav-item">Sign Up</a>
+            </nav>
+        </div>
+
+        <main class="bg-cream">
+            <section class="px-4 pb-14 pt-8 sm:px-6 lg:pb-20 lg:pt-12">
+                <div class="mx-auto max-w-7xl">
+                    <div class="grid items-center gap-10 lg:grid-cols-[1.06fr_0.94fr]">
+                        <div class="reveal hero-glow">
+                            <div class="inline-flex items-center gap-2 rounded-full bg-[#F9EBD7] px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-ink/75">
+                                <span class="inline-block h-2.5 w-2.5 rounded-full bg-[#F4B26A]"></span>
+                                Marketplace for skilled work
+                            </div>
+
+                            <h1 class="mt-6 max-w-xl text-display text-ink">
+                                Find skilled talent for your next project
+                            </h1>
+
+                            <p class="mt-5 max-w-lg text-lg text-ink/70 sm:text-xl">
+                                Hire vetted creatives, freelancers, and artisans for product, design, events, and everyday jobs.
+                            </p>
+
+                            <form class="mt-8 max-w-xl rounded-full border border-[#E7DED0] bg-white p-2 shadow-card">
+                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                    <label class="relative flex-1">
+                                        <span class="sr-only">Search for work</span>
+                                        <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-ink/50">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20L16.65 16.65"></path></svg>
+                                        </span>
+                                        <input type="text" placeholder="Search freelance talent, jobs, or skills" class="w-full rounded-full border-0 bg-white py-3 pl-12 pr-3 text-base text-ink placeholder:text-ink/45 focus:outline-none" />
+                                    </label>
+                                    <button type="submit" class="inline-flex min-h-[44px] items-center justify-center rounded-full bg-ink px-5 py-3 text-sm font-semibold text-cream hover:bg-navy md:px-6">Search</button>
+                                </div>
+                            </form>
+
+                            <div class="chip-scroll mt-5 max-w-xl pb-1">
+                                <button type="button" class="chip inline-flex items-center rounded-full bg-chip-peach px-4 py-2 text-sm font-medium text-ink">Branding</button>
+                                <button type="button" class="chip inline-flex items-center rounded-full bg-chip-mint px-4 py-2 text-sm font-medium text-ink">Photography</button>
+                                <button type="button" class="chip inline-flex items-center rounded-full bg-chip-lavender px-4 py-2 text-sm font-medium text-ink">UI/UX</button>
+                                <button type="button" class="chip inline-flex items-center rounded-full bg-chip-pink px-4 py-2 text-sm font-medium text-ink">Events</button>
+                                <button type="button" class="chip inline-flex items-center rounded-full bg-[#F5F1E6] px-4 py-2 text-sm font-medium text-ink">Video</button>
+                            </div>
+
+                            <div class="mt-8 flex flex-wrap items-center gap-4">
+                                <a href="signup-member-supabase.html" id="hero-member-link" class="inline-flex min-h-[48px] items-center justify-center rounded-full bg-ink px-6 py-3 text-base font-semibold text-cream shadow-card hover:bg-navy">Hire talent</a>
+                                <a href="signup-apprentice-supabase.html" id="hero-apprentice-link" class="inline-flex min-h-[48px] items-center justify-center rounded-full border border-ink/10 bg-white px-6 py-3 text-base font-semibold text-ink shadow-sm hover:bg-[#F9F4EE]">Join as freelancer</a>
+                            </div>
+                        </div>
+
+                        <div class="relative reveal reveal-delay-2">
+                            <div class="hero-illustration relative mx-auto w-full max-w-[560px] rounded-[2rem] border border-[#EDE2D2] bg-[#F7EFE3] p-4 shadow-soft sm:p-6">
+                                <div class="absolute inset-x-8 top-8 h-20 rounded-full bg-[#F7DAB0] opacity-70 blur-3xl"></div>
+
+                                <svg viewBox="0 0 620 470" class="relative z-10 w-full" role="img" aria-label="Illustration of a freelancer working on a laptop">
+                                    <rect x="90" y="50" width="440" height="300" rx="34" fill="#F4E0CB"/>
+                                    <rect x="140" y="108" width="220" height="156" rx="22" fill="#FFFFFF"/>
+                                    <rect x="168" y="136" width="166" height="24" rx="12" fill="#E8E3F9"/>
+                                    <rect x="168" y="170" width="110" height="12" rx="6" fill="#EEE7DD"/>
+                                    <rect x="168" y="188" width="128" height="12" rx="6" fill="#EEE7DD"/>
+                                    <rect x="170" y="218" width="82" height="12" rx="6" fill="#F7D7B3"/>
+                                    <rect x="384" y="110" width="108" height="110" rx="18" fill="#F9D9DE"/>
+                                    <rect x="400" y="130" width="74" height="12" rx="6" fill="#FFF2F3"/>
+                                    <rect x="400" y="152" width="56" height="12" rx="6" fill="#FFF2F3"/>
+                                    <rect x="400" y="178" width="62" height="12" rx="6" fill="#FFF2F3"/>
+                                    <circle cx="240" cy="320" r="74" fill="#F1C699"/>
+                                    <path d="M170 316c8-56 52-95 88-95 44 0 88 42 96 95v82H170v-82z" fill="#16151F"/>
+                                    <path d="M240 258c-24 0-44 18-44 41v38h88v-38c0-23-20-41-44-41z" fill="#F5D9BB"/>
+                                    <circle cx="240" cy="281" r="34" fill="#F5D9BB"/>
+                                    <path d="M260 259c7 7 13 19 14 30 11 12 18 30 18 47h-52c0-17 6-34 17-47 4-5 8-14 3-30z" fill="#16151F"/>
+                                    <path d="M158 323h188c21 0 38 17 38 38v16H120v-16c0-21 17-38 38-38z" fill="#2A2740"/>
+                                    <rect x="420" y="280" width="108" height="44" rx="14" fill="#DCF2E3"/>
+                                    <rect x="438" y="298" width="72" height="8" rx="4" fill="#278A5F" opacity="0.9"/>
+                                    <path d="M394 325h178" stroke="#D3C6B0" stroke-width="10" stroke-linecap="round"/>
+                                    <rect x="98" y="362" width="156" height="12" rx="6" fill="#EBDDC4"/>
+                                    <rect x="356" y="362" width="142" height="12" rx="6" fill="#EBDDC4"/>
+                                    <circle cx="495" cy="178" r="12" fill="#FBE2CE"/>
+                                    <path d="M495 163v30M480 178h30M485 168l20 20M485 188l20-20" stroke="#16151F" stroke-width="2.5" stroke-linecap="round"/>
+                                </svg>
+
+                                <div class="floating-card absolute -left-2 top-10 w-40 rounded-2xl border border-[#EAE0D4] bg-white p-3 shadow-md sm:-left-6 sm:top-12">
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-chip-lavender text-sm font-bold text-ink">A</div>
+                                        <div>
+                                            <p class="text-[11px] font-semibold text-ink">Aisha K.</p>
+                                            <p class="text-[10px] text-ink/60">Brand designer</p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 flex items-center justify-between text-[10px] text-ink/70">
+                                        <span>4.9 rating</span>
+                                        <span class="rounded-full bg-chip-mint px-2 py-1 font-semibold text-[#14532D]">Top rated</span>
+                                    </div>
+                                </div>
+
+                                <div class="floating-card absolute -right-2 bottom-8 w-44 rounded-2xl border border-[#EAE0D4] bg-white p-3 shadow-md sm:-right-4 sm:bottom-10">
+                                    <p class="text-[11px] uppercase tracking-[0.18em] text-ink/50">Jobs completed</p>
+                                    <p class="mt-2 text-3xl font-extrabold text-ink">500+</p>
+                                    <p class="mt-1 text-[11px] text-ink/60">Delivered this month</p>
+                                </div>
+
+                                <svg class="sparkle absolute left-6 top-1/2 h-8 w-8 text-ink/60" viewBox="0 0 100 100" aria-hidden="true">
+                                    <path d="M50 6l9 28 28 9-28 9-9 28-9-28-28-9 28-9 9-28z" fill="currentColor"/>
+                                </svg>
+                                <svg class="sparkle absolute right-8 top-14 h-6 w-6 rotate-12 text-[#E5B69C]" viewBox="0 0 100 100" aria-hidden="true">
+                                    <path d="M50 8l10 30 30 10-30 10-10 30-10-30-30-10 30-10 10-30z" fill="currentColor"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="bg-navy py-5 text-cream">
+                <div class="mx-auto max-w-6xl px-4 sm:px-6">
+                    <div class="logo-row gap-4 text-center text-sm font-semibold tracking-[0.24em] text-cream/70">
+                        <span class="logo-pill inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 py-2">NEXA</span>
+                        <span class="logo-pill inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 py-2">MIRAGE</span>
+                        <span class="logo-pill inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 py-2">CINDER</span>
+                        <span class="logo-pill inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 py-2">STUDIO+9</span>
+                        <span class="logo-pill inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 py-2">FABLE</span>
+                        <span class="logo-pill inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 py-2">SORA</span>
+                    </div>
+                </div>
+            </div>
+
+            <section id="features" class="bg-section-lavender py-16 sm:py-20">
+                <div class="mx-auto max-w-7xl px-4 sm:px-6">
+                    <div class="relative mx-auto mb-10 max-w-2xl text-center reveal">
+                        <span class="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/70 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink/70">
+                            <svg class="h-3 w-3 text-ink/70" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 8l10 30 30 10-30 10-10 30-10-30-30-10 30-10 10-30z" fill="currentColor"/></svg>
+                            Featured work
+                        </span>
+                        <h2 class="mt-5 text-3xl font-bold tracking-tight text-ink sm:text-4xl">Fresh opportunities for creative talent</h2>
+                    </div>
+
+                    <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+                        <article class="feature-card reveal white-card rounded-2xl border border-[#EDE7DF] bg-white p-5 shadow-card">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-chip-peach text-lg text-ink">🎨</div>
+                                <span class="rounded-full bg-chip-peach px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink/70">Branding</span>
+                            </div>
+                            <h3 class="mt-4 text-xl font-bold text-ink">Brand identity refresh</h3>
+                            <p class="mt-2 text-sm text-ink/65">Lagos, Nigeria • Design • 2 weeks</p>
+                            <div class="mt-4 flex flex-wrap gap-2">
+                                <span class="rounded-full bg-chip-lavender px-2.5 py-1 text-[11px] font-medium text-ink">Remote</span>
+                                <span class="rounded-full bg-chip-mint px-2.5 py-1 text-[11px] font-medium text-ink">Full-time</span>
+                            </div>
+                            <div class="mt-6 flex items-end justify-between gap-3">
+                                <div>
+                                    <p class="text-xs uppercase tracking-[0.16em] text-ink/50">Budget</p>
+                                    <p class="mt-1 text-xl font-bold text-ink">₦180k</p>
+                                </div>
+                                <a href="signup-member-supabase.html" class="inline-flex min-h-[44px] items-center justify-center rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-cream hover:bg-navy">Apply</a>
+                            </div>
+                        </article>
+
+                        <article class="feature-card reveal white-card rounded-2xl border border-[#EDE7DF] bg-white p-5 shadow-card reveal-delay-1">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-chip-mint text-lg text-ink">📸</div>
+                                <span class="rounded-full bg-chip-mint px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink/70">Photo</span>
+                            </div>
+                            <h3 class="mt-4 text-xl font-bold text-ink">Product photography</h3>
+                            <p class="mt-2 text-sm text-ink/65">Abuja, Nigeria • Studio • 5 days</p>
+                            <div class="mt-4 flex flex-wrap gap-2">
+                                <span class="rounded-full bg-chip-peach px-2.5 py-1 text-[11px] font-medium text-ink">On-site</span>
+                                <span class="rounded-full bg-chip-lavender px-2.5 py-1 text-[11px] font-medium text-ink">Weekend</span>
+                            </div>
+                            <div class="mt-6 flex items-end justify-between gap-3">
+                                <div>
+                                    <p class="text-xs uppercase tracking-[0.16em] text-ink/50">Budget</p>
+                                    <p class="mt-1 text-xl font-bold text-ink">₦120k</p>
+                                </div>
+                                <a href="signup-member-supabase.html" class="inline-flex min-h-[44px] items-center justify-center rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-cream hover:bg-navy">View</a>
+                            </div>
+                        </article>
+
+                        <article class="feature-card reveal white-card rounded-2xl border border-[#EDE7DF] bg-white p-5 shadow-card reveal-delay-2">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-chip-lavender text-lg text-ink">🧑‍💻</div>
+                                <span class="rounded-full bg-chip-lavender px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink/70">Web</span>
+                            </div>
+                            <h3 class="mt-4 text-xl font-bold text-ink">Landing page build</h3>
+                            <p class="mt-2 text-sm text-ink/65">Remote • Front-end • 2 weeks</p>
+                            <div class="mt-4 flex flex-wrap gap-2">
+                                <span class="rounded-full bg-chip-mint px-2.5 py-1 text-[11px] font-medium text-ink">Remote</span>
+                                <span class="rounded-full bg-chip-pink px-2.5 py-1 text-[11px] font-medium text-ink">Flexible</span>
+                            </div>
+                            <div class="mt-6 flex items-end justify-between gap-3">
+                                <div>
+                                    <p class="text-xs uppercase tracking-[0.16em] text-ink/50">Budget</p>
+                                    <p class="mt-1 text-xl font-bold text-ink">₦220k</p>
+                                </div>
+                                <a href="signup-member-supabase.html" class="inline-flex min-h-[44px] items-center justify-center rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-cream hover:bg-navy">Apply</a>
+                            </div>
+                        </article>
+
+                        <article class="feature-card reveal white-card rounded-2xl border border-[#EDE7DF] bg-white p-5 shadow-card reveal-delay-3">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-chip-pink text-lg text-ink">🎤</div>
+                                <span class="rounded-full bg-chip-pink px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink/70">Video</span>
+                            </div>
+                            <h3 class="mt-4 text-xl font-bold text-ink">Short-form promo reel</h3>
+                            <p class="mt-2 text-sm text-ink/65">Kano, Nigeria • Media • 4 days</p>
+                            <div class="mt-4 flex flex-wrap gap-2">
+                                <span class="rounded-full bg-chip-mint px-2.5 py-1 text-[11px] font-medium text-ink">Quick turn</span>
+                                <span class="rounded-full bg-chip-peach px-2.5 py-1 text-[11px] font-medium text-ink">Contract</span>
+                            </div>
+                            <div class="mt-6 flex items-end justify-between gap-3">
+                                <div>
+                                    <p class="text-xs uppercase tracking-[0.16em] text-ink/50">Budget</p>
+                                    <p class="mt-1 text-xl font-bold text-ink">₦160k</p>
+                                </div>
+                                <a href="signup-member-supabase.html" class="inline-flex min-h-[44px] items-center justify-center rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-cream hover:bg-navy">View</a>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <section id="faq" class="bg-cream px-4 py-16 sm:px-6 lg:py-20">
+                <div class="mx-auto max-w-4xl">
+                    <div class="relative mb-10 text-center reveal">
+                        <h2 class="text-3xl font-bold tracking-tight text-ink sm:text-4xl">Frequently asked questions</h2>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="faq-item rounded-2xl border border-[#E6DDD0] bg-white p-1 shadow-sm reveal">
+                            <button class="faq-trigger flex w-full items-center justify-between gap-4 px-5 py-4 text-left" type="button">
+                                <span class="text-base font-semibold text-ink sm:text-lg">Is it free to use?</span>
+                                <i data-lucide="chevron-down" class="h-5 w-5 text-ink/70"></i>
+                            </button>
+                            <div class="faq-content px-5 pb-4">
+                                <p class="text-ink/70">Yes. Basic posting and browsing are free, and many businesses start with a simple profile before upgrading to paid features.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item rounded-2xl border border-[#E6DDD0] bg-white p-1 shadow-sm">
+                            <button class="faq-trigger flex w-full items-center justify-between gap-4 px-5 py-4 text-left" type="button">
+                                <span class="text-base font-semibold text-ink sm:text-lg">How do I hire talent?</span>
+                                <i data-lucide="chevron-down" class="h-5 w-5 text-ink/70"></i>
+                            </button>
+                            <div class="faq-content px-5 pb-4">
+                                <p class="text-ink/70">Search by category, budget, location, or skill, then review shortlisted profiles before sending your project brief.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item rounded-2xl border border-[#E6DDD0] bg-white p-1 shadow-sm">
+                            <button class="faq-trigger flex w-full items-center justify-between gap-4 px-5 py-4 text-left" type="button">
+                                <span class="text-base font-semibold text-ink sm:text-lg">What types of work are on Craftnet?</span>
+                                <i data-lucide="chevron-down" class="h-5 w-5 text-ink/70"></i>
+                            </button>
+                            <div class="faq-content px-5 pb-4">
+                                <p class="text-ink/70">From photography, branding, web design, and video production to event support and artisan services, the marketplace is built for flexible work.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="bg-navy py-10 text-[#E8E4DA]">
+            <div class="mx-auto max-w-6xl px-4 sm:px-6">
+                <div class="grid gap-8 md:grid-cols-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-white">Craftnet</h3>
+                        <p class="mt-3 max-w-xs text-sm text-[#E8E4DA]/75">Connecting clients and skilled freelancers across Africa with simple, trusted hiring.</p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-semibold uppercase tracking-[0.18em] text-[#F3EDE3]">Platform</h4>
+                        <ul class="mt-4 space-y-2 text-sm text-[#E8E4DA]/75">
+                            <li><a href="#features" class="hover:text-white">Features</a></li>
+                            <li><a href="#faq" class="hover:text-white">FAQ</a></li>
+                            <li><a href="help-center.html" class="hover:text-white">Help Center</a></li>
+                            <li><a href="contact-form.html" class="hover:text-white">Contact Us</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-semibold uppercase tracking-[0.18em] text-[#F3EDE3]">Legal</h4>
+                        <ul class="mt-4 space-y-2 text-sm text-[#E8E4DA]/75">
+                            <li><a href="terms-of-service.html" class="hover:text-white">Terms of Service</a></li>
+                            <li><a href="privacy-policy.html" class="hover:text-white">Privacy Policy</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-semibold uppercase tracking-[0.18em] text-[#F3EDE3]">Contact</h4>
+                        <ul class="mt-4 space-y-2 text-sm text-[#E8E4DA]/75">
+                            <li>support@craftiva.com</li>
+                            <li>+234 (9) 155 164 087</li>
+                            <li>Lagos, Nigeria</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="mt-8 border-t border-white/10 pt-6 text-center text-sm text-[#E8E4DA]/70">© 2025 Craftnet. All rights reserved.</div>
+            </div>
+        </footer>
+
+        <script>
+            const convertFeatherToLucide = () => {
+                document.querySelectorAll('[data-lucide]').forEach((node) => {
+                    const name = node.getAttribute('data-lucide');
+                    if (!name) return;
+                    node.setAttribute('data-lucide', name);
+                });
+                if (window.lucide) {
+                    lucide.createIcons();
+                }
+            };
+
+            document.addEventListener('DOMContentLoaded', () => {
+                convertFeatherToLucide();
+
+                const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+                const revealItems = document.querySelectorAll('.reveal');
+
+                if (!motionQuery.matches && 'IntersectionObserver' in window) {
+                    const observer = new IntersectionObserver((entries) => {
+                        entries.forEach((entry) => {
+                            if (entry.isIntersecting) {
+                                entry.target.classList.add('visible');
+                                observer.unobserve(entry.target);
+                            }
+                        });
+                    }, { threshold: 0.12 });
+                    revealItems.forEach((item) => observer.observe(item));
+                } else {
+                    revealItems.forEach((item) => item.classList.add('visible'));
+                }
+
+                const hero = document.querySelector('.hero-glow');
+                if (hero && window.matchMedia('(pointer: fine)').matches && !motionQuery.matches) {
+                    hero.addEventListener('pointermove', (event) => {
+                        const rect = hero.getBoundingClientRect();
+                        const x = ((event.clientX - rect.left) / rect.width - 0.5) * 28;
+                        const y = ((event.clientY - rect.top) / rect.height - 0.5) * 18;
+                        hero.style.setProperty('--pointer-x', `${x}px`);
+                        hero.style.setProperty('--pointer-y', `${y}px`);
+                    });
+                }
+
+                document.querySelectorAll('.faq-item').forEach((item) => {
+                    const trigger = item.querySelector('.faq-trigger');
+                    if (!trigger) return;
+                    trigger.addEventListener('click', () => {
+                        const isOpen = item.classList.contains('active');
+                        document.querySelectorAll('.faq-item').forEach((faq) => {
+                            faq.classList.remove('active');
+                            const faqIcon = faq.querySelector('[data-lucide="chevron-down"]');
+                            if (faqIcon) faqIcon.style.transform = 'rotate(0deg)';
+                        });
+                        if (!isOpen) {
+                            item.classList.add('active');
+                            const icon = item.querySelector('[data-lucide="chevron-down"]');
+                            if (icon) icon.style.transform = 'rotate(180deg)';
+                        }
+                    });
+                });
+
+                const firstFaqItem = document.querySelector('.faq-item');
+                if (firstFaqItem) {
+                    firstFaqItem.classList.add('active');
+                    const firstIcon = firstFaqItem.querySelector('[data-lucide="chevron-down"]');
+                    if (firstIcon) firstIcon.style.transform = 'rotate(180deg)';
+                }
+            });
+
+            function getReferralCode() {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get('ref');
+            }
+
+            function updateSignupLinks() {
+                const referralCode = getReferralCode();
+                if (referralCode) {
+                    const memberLinks = document.querySelectorAll('#signup-member-link, #hero-member-link');
+                    const apprenticeLinks = document.querySelectorAll('#hero-apprentice-link');
+                    memberLinks.forEach((link) => {
+                        link.href = `signup-member-supabase.html?ref=${referralCode}`;
+                    });
+                    apprenticeLinks.forEach((link) => {
+                        link.href = `signup-apprentice-supabase.html?ref=${referralCode}`;
+                    });
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', updateSignupLinks);
+
+            const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+            const mobileNavDrawer = document.getElementById('mobile-nav-drawer');
+            const mobileNavOverlay = document.getElementById('mobile-nav-overlay');
+            const mobileNavClose = document.getElementById('mobile-nav-close');
+
+            function openMobileMenu() {
+                mobileNavDrawer.classList.add('active');
+                mobileNavOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeMobileMenu() {
+                mobileNavDrawer.classList.remove('active');
+                mobileNavOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            if (mobileMenuToggle) mobileMenuToggle.addEventListener('click', openMobileMenu);
+            if (mobileNavClose) mobileNavClose.addEventListener('click', closeMobileMenu);
+            if (mobileNavOverlay) mobileNavOverlay.addEventListener('click', closeMobileMenu);
+            document.querySelectorAll('.mobile-nav-item').forEach((item) => item.addEventListener('click', closeMobileMenu));
+        </script>
+        <script src="dark-mode.js"></script>
+    </body>
+</html>
