@@ -75,6 +75,8 @@ import {
     deleteRating,
     getReferralWallet,
     getReferralEarnings,
+    getMonthlyEarnings,
+    getRecentTransactions,
     getWithdrawalRequests,
     submitDispute,
     getUserDisputes,
@@ -323,17 +325,16 @@ const apprenticeContentTemplates = {
         }
 
         return `
-        <div class="mb-8">
+        <div class="dashboard-welcome mb-8">
             <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome, ${
                 userData.name || "Apprentice"
             }!</h1>
             <p class="text-gray-600">Here's your overview.</p>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
              <!-- Profile Info -->
             <div class="md:col-span-1 bg-white p-6 rounded-lg shadow">
                 <div class="flex flex-col items-center text-center">
-                    <img id="user-avatar-main" class="w-24 h-24 rounded-full object-cover mb-4" src="https://placehold.co/100x100/EBF4FF/3B82F6?text=${(
+                    <img id="user-avatar-main" class="w-24 h-24 rounded-full object-cover mb-4" src="https://placehold.co/300x300/EBF4FF/3B82F6?text=${(
                         userData.name || "A"
                     ).charAt(0)}" alt="User profile photo">
                     <h2 class="text-xl font-bold">${
@@ -348,30 +349,37 @@ const apprenticeContentTemplates = {
                 </div>
             </div>
             <!-- Job Stats & Quick Actions -->
-            <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div class="stat-card bg-white p-6 rounded-lg shadow text-center">
-                    <h3 class="text-sm font-medium text-gray-500">Pending Jobs</h3>
-                    <p class="text-3xl font-bold mt-2">${stats.pendingJobs}</p>
+                    <div class="stat-icon-badge stat-icon-peach mx-auto"><i data-feather="clock"></i></div>
+                    <p id="stat-pending-jobs" class="text-3xl font-bold mt-3">${stats.pendingJobs}</p>
+                    <h3 class="text-sm font-medium text-gray-500 mt-1">Pending Jobs</h3>
                 </div>
                 <div class="stat-card bg-white p-6 rounded-lg shadow text-center">
-                     <h3 class="text-sm font-medium text-gray-500">Active Jobs</h3>
-                    <p class="text-3xl font-bold mt-2">${stats.activeJobs}</p>
+                    <div class="stat-icon-badge stat-icon-lavender mx-auto"><i data-feather="briefcase"></i></div>
+                    <p id="stat-active-jobs" class="text-3xl font-bold mt-3">${stats.activeJobs}</p>
+                    <h3 class="text-sm font-medium text-gray-500 mt-1">Active Jobs</h3>
                 </div>
                 <div class="stat-card bg-white p-6 rounded-lg shadow text-center">
-                     <h3 class="text-sm font-medium text-gray-500">Completed Jobs</h3>
-                    <p class="text-3xl font-bold mt-2">${
-                        stats.completedJobs
-                    }</p>
+                    <div class="stat-icon-badge stat-icon-mint mx-auto"><i data-feather="check-circle"></i></div>
+                    <p id="stat-completed-jobs" class="text-3xl font-bold mt-3">${stats.completedJobs}</p>
+                    <h3 class="text-sm font-medium text-gray-500 mt-1">Completed Jobs</h3>
+                </div>
+                <div class="stat-card stat-card-featured bg-white p-6 rounded-lg shadow text-center">
+                    <div class="stat-icon-badge stat-icon-pink mx-auto"><i data-feather="dollar-sign"></i></div>
+                    <p id="stat-total-earned" class="text-3xl font-bold mt-3">₦${Number(stats.totalEarned || 0).toLocaleString()}</p>
+                    <h3 class="text-sm font-medium text-gray-500 mt-1">Total Earned</h3>
                 </div>
                 <div class="sm:col-span-3 bg-white p-6 rounded-lg shadow">
                     <h3 class="text-lg font-bold mb-4">Quick Actions</h3>
                     <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
-                         <button class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center"><i data-feather="edit" class="w-4 h-4 mr-2"></i>Update Portfolio</button>
-                         <button class="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 flex items-center justify-center"><i data-feather="briefcase" class="w-4 h-4 mr-2"></i>Track Jobs</button>
-                         <button class="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center justify-center"><i data-feather="dollar-sign" class="w-4 h-4 mr-2"></i>Withdraw Earnings</button>
+                         <button class="dashboard-action dashboard-action-primary flex-1 px-4 py-2 rounded-lg flex items-center justify-center"><i data-feather="edit" class="w-4 h-4 mr-2"></i>Update Portfolio</button>
+                         <button class="dashboard-action dashboard-action-secondary flex-1 px-4 py-2 rounded-lg flex items-center justify-center"><i data-feather="briefcase" class="w-4 h-4 mr-2"></i>Track Jobs</button>
+                         <button class="dashboard-action dashboard-action-mint flex-1 px-4 py-2 rounded-lg flex items-center justify-center"><i data-feather="dollar-sign" class="w-4 h-4 mr-2"></i>Withdraw Earnings</button>
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     `;
     },
@@ -407,47 +415,47 @@ const apprenticeContentTemplates = {
         <!-- Job Stats Overview -->
         <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
             <div class="stat-card bg-white p-6 rounded-lg shadow text-center">
-                <div class="p-3 rounded-full bg-blue-100 text-blue-600 mx-auto w-12 h-12 flex items-center justify-center mb-3">
+                <div class="stat-icon-badge stat-icon-lavender mx-auto mb-3">
                     <i data-feather="briefcase" class="w-6 h-6"></i>
                 </div>
                 <h3 class="text-sm font-medium text-gray-500">Available Jobs</h3>
-                <p class="text-3xl font-bold mt-2 text-blue-600">${
+                <p class="text-3xl font-bold mt-2 text-ink">${
                     availableJobs.length
                 }</p>
             </div>
             <div class="stat-card bg-white p-6 rounded-lg shadow text-center">
-                <div class="p-3 rounded-full bg-yellow-100 text-yellow-600 mx-auto w-12 h-12 flex items-center justify-center mb-3">
+                <div class="stat-icon-badge stat-icon-peach mx-auto mb-3">
                     <i data-feather="clock" class="w-6 h-6"></i>
                 </div>
                 <h3 class="text-sm font-medium text-gray-500">Pending Applications</h3>
-                <p class="text-3xl font-bold mt-2 text-yellow-600">${
+                <p class="text-3xl font-bold mt-2 text-peach">${
                     apprenticeStats.pendingApplications
                 }</p>
             </div>
             <div class="stat-card bg-white p-6 rounded-lg shadow text-center">
-                <div class="p-3 rounded-full bg-green-100 text-green-600 mx-auto w-12 h-12 flex items-center justify-center mb-3">
+                <div class="stat-icon-badge stat-icon-mint mx-auto mb-3">
                     <i data-feather="play" class="w-6 h-6"></i>
                 </div>
                 <h3 class="text-sm font-medium text-gray-500">Active Jobs</h3>
-                <p class="text-3xl font-bold mt-2 text-green-600">${
+                <p class="text-3xl font-bold mt-2 text-mint">${
                     apprenticeStats.activeJobs
                 }</p>
             </div>
             <div class="stat-card bg-white p-6 rounded-lg shadow text-center">
-                <div class="p-3 rounded-full bg-orange-100 text-orange-600 mx-auto w-12 h-12 flex items-center justify-center mb-3">
+                <div class="stat-icon-badge stat-icon-peach mx-auto mb-3">
                     <i data-feather="check-circle" class="w-6 h-6"></i>
                 </div>
                 <h3 class="text-sm font-medium text-gray-500">Pending Review</h3>
-                <p class="text-3xl font-bold mt-2 text-orange-600">${
+                <p class="text-3xl font-bold mt-2 text-peach">${
                     apprenticeStats.pendingReviewJobs
                 }</p>
             </div>
             <div class="stat-card bg-white p-6 rounded-lg shadow text-center">
-                <div class="p-3 rounded-full bg-purple-100 text-purple-600 mx-auto w-12 h-12 flex items-center justify-center mb-3">
+                <div class="stat-icon-badge stat-icon-lavender mx-auto mb-3">
                     <i data-feather="dollar-sign" class="w-6 h-6"></i>
                 </div>
                 <h3 class="text-sm font-medium text-gray-500">Total Earned</h3>
-                <p class="text-3xl font-bold mt-2 text-purple-600">₦${(
+                <p class="text-3xl font-bold mt-2 text-lavender">₦${(
                     apprenticeStats.totalEarned * 1500
                 ).toLocaleString()}</p>
             </div>
@@ -476,7 +484,7 @@ const apprenticeContentTemplates = {
                                             }</h4>
                                             ${
                                                 job.job_type === 'personal' || job.assigned_apprentice_id
-                                                    ? `<span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full font-medium">Personal Request</span>`
+                                                    ? `<span class="status-badge status-badge-lavender text-xs px-2 py-1 rounded-full font-medium">Personal Request</span>`
                                                     : ''
                                             }
                                         </div>
@@ -485,7 +493,7 @@ const apprenticeContentTemplates = {
                                         }</p>
                                         ${
                                             job.job_type === 'personal' && job.assigned_apprentice_id === userData.id
-                                                ? `<p class="text-sm text-purple-600 font-medium mt-1">📍 Sent directly to you</p>`
+                                                ? `<p class="text-sm text-lavender font-medium mt-1">📍 Sent directly to you</p>`
                                                 : ''
                                         }
                                         <div class="flex items-center mt-2">
@@ -502,7 +510,7 @@ const apprenticeContentTemplates = {
                                         </div>
                                     </div>
                                     <div class="text-right">
-                                                        <div class="text-2xl font-bold text-green-600">₦${(
+                                                        <div class="text-2xl font-bold text-mint">₦${(
                                                             job.fixed_price || job.budget_max || (job.budget_min && job.budget_max ? Math.round((job.budget_min + job.budget_max) / 2) : 0)
                                                         ).toLocaleString()}</div>
                                         <div class="text-sm text-gray-500">Fixed Price</div>
@@ -538,7 +546,7 @@ const apprenticeContentTemplates = {
                                 </div>
                                 
                                 <div class="flex justify-end">
-                                    <button class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium apply-job-btn" 
+                                    <button class="dashboard-action dashboard-action-primary px-6 py-2 rounded-lg font-medium apply-job-btn" 
                                             data-job-id="${job.id}" 
                                             data-job-title="${job.title}">
                                         <i data-feather="send" class="w-4 h-4 mr-2"></i>
@@ -576,7 +584,7 @@ const apprenticeContentTemplates = {
                         ${personalRequests
                             .map(
                                 (request) => `
-                            <div class="border border-green-200 rounded-lg p-6 bg-green-50">
+                            <div class="alert-box alert-box-mint rounded-lg p-6">
                                 <div class="flex justify-between items-start mb-4">
                                     <div class="flex-1">
                                         <h4 class="text-xl font-semibold text-gray-900">${
@@ -596,7 +604,7 @@ const apprenticeContentTemplates = {
                                             }</span>
                                         </div>
                                     </div>
-                                    <span class="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full">
+                                    <span class="status-badge status-badge-mint text-xs px-3 py-1 rounded-full">
                                         Personal Request
                                     </span>
                                 </div>
@@ -626,7 +634,7 @@ const apprenticeContentTemplates = {
                                         <i data-feather="x" class="w-4 h-4 mr-2"></i>
                                         Reject
                                     </button>
-                                    <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm accept-personal-request-btn"
+                                    <button class="dashboard-action dashboard-action-mint px-4 py-2 rounded-lg text-sm accept-personal-request-btn"
                                             data-request-id="${request.id}">
                                         <i data-feather="check" class="w-4 h-4 mr-2"></i>
                                         Accept
@@ -660,7 +668,7 @@ const apprenticeContentTemplates = {
                         ${activeJobs
                             .map(
                                 (job) => `
-                            <div class="border border-green-200 rounded-lg p-6 bg-green-50">
+                            <div class="alert-box alert-box-mint rounded-lg p-6">
                                 <div class="flex justify-between items-start mb-4">
                                     <div class="flex-1">
                                         <div class="flex items-center gap-2 mb-2">
@@ -669,7 +677,7 @@ const apprenticeContentTemplates = {
                                             }</h4>
                                             ${
                                                 job.job_type === 'personal'
-                                                    ? `<span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full font-medium">Personal Request</span>`
+                                                    ? `<span class="status-badge status-badge-lavender text-xs px-2 py-1 rounded-full font-medium">Personal Request</span>`
                                                     : ''
                                             }
                                         </div>
@@ -689,8 +697,8 @@ const apprenticeContentTemplates = {
                                     </div>
                                     ${
                                         job.status === "pending_review"
-                                            ? `<span class="bg-yellow-100 text-yellow-800 text-xs px-3 py-1 rounded-full">Awaiting Review</span>`
-                                            : `<span class="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full">In Progress</span>`
+                                            ? `<span class="status-badge status-badge-peach text-xs px-3 py-1 rounded-full">Awaiting Review</span>`
+                                            : `<span class="status-badge status-badge-mint text-xs px-3 py-1 rounded-full">In Progress</span>`
                                     }
                                 </div>
 
@@ -714,7 +722,7 @@ const apprenticeContentTemplates = {
                                 </div>
 
                                 <div class="flex justify-end space-x-3">
-                                    <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm submit-progress-update-btn"
+                                    <button class="dashboard-action dashboard-action-primary px-4 py-2 rounded-lg text-sm submit-progress-update-btn"
                                             data-job-id="${job.id}">
                                         <i data-feather="upload" class="w-4 h-4 mr-2"></i>
                                         Submit Progress Update
@@ -722,13 +730,13 @@ const apprenticeContentTemplates = {
                                     ${
                                         job.status === "pending_review"
                                             ? `<span class="text-sm text-gray-500 italic self-center">Final work submitted — awaiting member review</span>`
-                                            : `<button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm submit-final-work-btn"
+                                            : `<button class="dashboard-action dashboard-action-mint px-4 py-2 rounded-lg text-sm submit-final-work-btn"
                                             data-job-request-id="${job.id}">
                                         <i data-feather="check-circle" class="w-4 h-4 mr-2"></i>
                                         Submit Final Work
                                     </button>`
                                     }
-                                    <button class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 text-sm load-apprentice-progress-updates-btn"
+                                    <button class="dashboard-action dashboard-action-lavender px-4 py-2 rounded-lg text-sm load-apprentice-progress-updates-btn"
                                             data-job-id="${job.id}">
                                         <i data-feather="eye" class="w-4 h-4 mr-2"></i>
                                         View Progress & Feedback
@@ -781,7 +789,7 @@ const apprenticeContentTemplates = {
                                             }</h4>
                                             ${
                                                 app.job_request.job_type === 'personal'
-                                                    ? `<span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full font-medium">Personal Request</span>`
+                                                    ? `<span class="status-badge status-badge-lavender text-xs px-2 py-1 rounded-full font-medium">Personal Request</span>`
                                                     : ''
                                             }
                                         </div>
@@ -862,17 +870,17 @@ const apprenticeContentTemplates = {
                                     <div class="border-t border-gray-200 pt-4">
                                         <h5 class="font-semibold text-gray-900 mb-3">Job Progress</h5>
                                         <div class="flex items-center space-x-4 mb-4">
-                                            <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm submit-progress-update-btn"
+                                            <button class="dashboard-action dashboard-action-primary px-4 py-2 rounded-lg text-sm submit-progress-update-btn"
                                                     data-job-id="${app.job_request.job_id || app.job_request.id}">
                                                 <i data-feather="upload" class="w-4 h-4 mr-2"></i>
                                                 Submit Progress Update
                                             </button>
-                                            <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm submit-final-work-btn"
+                                            <button class="dashboard-action dashboard-action-mint px-4 py-2 rounded-lg text-sm submit-final-work-btn"
                                                     data-job-request-id="${app.job_request.id}">
                                                 <i data-feather="check-circle" class="w-4 h-4 mr-2"></i>
                                                 Submit Final Work
                                             </button>
-                                            <button class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 text-sm load-apprentice-progress-updates-btn"
+                                            <button class="dashboard-action dashboard-action-lavender px-4 py-2 rounded-lg text-sm load-apprentice-progress-updates-btn"
                                                     data-job-id="${app.job_request.job_id || app.job_request.id}">
                                                 <i data-feather="eye" class="w-4 h-4 mr-2"></i>
                                                 View Progress & Feedback
@@ -911,7 +919,6 @@ const apprenticeContentTemplates = {
     `;
     },
     earnings: async (userData) => {
-        // Get real earnings data
         let stats = {
             totalEarned: 0,
             availableBalance: 0,
@@ -919,9 +926,13 @@ const apprenticeContentTemplates = {
             goalProgress: 0,
         };
 
+        let monthlyEarnings = [];
+        let recentTransactions = [];
+
         try {
             const apprenticeStats = await getApprenticeStats(userData.id);
-            stats.totalEarned = apprenticeStats.totalEarned;
+            stats.totalEarned = Number(apprenticeStats.totalEarned || 0);
+
             try {
                 const referralWallet = await getReferralWallet(userData.id);
                 stats.availableBalance = Number(
@@ -932,14 +943,95 @@ const apprenticeContentTemplates = {
             } catch {
                 stats.availableBalance = 0;
             }
-            stats.thisMonth = Math.round(stats.totalEarned * 0.3); // 30% earned this month
+
             stats.goalProgress = Math.min(
                 100,
                 Math.round((stats.totalEarned / 7500000) * 100)
-            ); // Goal of ₦7,500,000
+            );
         } catch (error) {
             console.error("Error fetching earnings data:", error);
         }
+
+        try {
+            monthlyEarnings = await getMonthlyEarnings(userData.id, 4);
+        } catch (error) {
+            console.error("Error fetching monthly earnings:", error);
+            monthlyEarnings = [];
+        }
+
+        try {
+            recentTransactions = await getRecentTransactions(userData.id, 5);
+        } catch (error) {
+            console.error("Error fetching recent transactions:", error);
+            recentTransactions = [];
+        }
+
+        stats.thisMonth = monthlyEarnings[monthlyEarnings.length - 1]?.amountNgn || 0;
+
+        const maxMonthlyAmount = Math.max(
+            ...monthlyEarnings.map((m) => Number(m.amountNgn) || 0),
+            1
+        );
+
+        const trendMarkup =
+            monthlyEarnings.length > 0
+                ? `${monthlyEarnings
+                      .map(
+                          (m) => `
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">${m.label}</span>
+                                <span class="font-semibold text-mint">₦${Number(m.amountNgn || 0).toLocaleString()}</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="h-2 rounded-full progress-fill-mint" style="width: ${Math.min(100, ((Number(m.amountNgn || 0) / maxMonthlyAmount) * 100))}%"></div>
+                            </div>
+                        `
+                      )
+                      .join("")}`
+                : `
+                    <div class="text-center py-8">
+                        <i data-feather="bar-chart-2" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+                        <h4 class="text-lg font-semibold text-gray-700 mb-2">No Earnings Yet</h4>
+                        <p class="text-gray-500">Complete jobs to start building your earnings history.</p>
+                    </div>
+                `;
+
+        const transactionsMarkup =
+            recentTransactions.length > 0
+                ? `
+                    <div class="space-y-4">
+                        ${recentTransactions
+                            .map(
+                                (tx) => `
+                                    <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                                        <div class="flex items-center">
+                                            <div class="p-2 rounded-full bg-chip-mint text-mint mr-4">
+                                                <i data-feather="${tx.transaction_type === "escrow_release" ? "plus" : "minus"}" class="w-4 h-4"></i>
+                                            </div>
+                                            <div>
+                                                <h4 class="font-semibold text-gray-900">${tx.description || tx.transaction_type}</h4>
+                                                <p class="text-sm text-gray-600">${new Date(tx.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="font-bold ${tx.transaction_type === "escrow_release" ? "text-mint" : "text-red-500"}">
+                                                ${tx.transaction_type === "escrow_release" ? "+" : "-"}₦${Number(tx.amount_ngn || 0).toLocaleString()}
+                                            </span>
+                                            <p class="text-xs text-gray-500">${tx.status}</p>
+                                        </div>
+                                    </div>
+                                `
+                            )
+                            .join("")}
+                    </div>
+                `
+                : `
+                    <div class="text-center py-8">
+                        <i data-feather="dollar-sign" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+                        <h4 class="text-lg font-semibold text-gray-700 mb-2">No Transactions Yet</h4>
+                        <p class="text-gray-500">Complete your first job to see earnings here!</p>
+                    </div>
+                `;
 
         return `
         <div class="mb-8">
@@ -950,68 +1042,53 @@ const apprenticeContentTemplates = {
         <!-- Earnings Overview -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="stat-card bg-white p-6 rounded-lg shadow text-center">
-                <div class="p-3 rounded-full bg-green-100 text-green-600 mx-auto w-12 h-12 flex items-center justify-center mb-3">
+                <div class="stat-icon-badge stat-icon-mint mx-auto mb-3">
                     <i data-feather="dollar-sign" class="w-6 h-6"></i>
                 </div>
                 <h3 class="text-sm font-medium text-gray-500">Total Earned</h3>
-                <p class="text-3xl font-bold mt-2 text-green-600">₦${(
-                    stats.totalEarned * 1500
-                ).toLocaleString()}</p>
+                <p class="text-3xl font-bold mt-2 text-mint">₦${Number(stats.totalEarned || 0).toLocaleString()}</p>
             </div>
             <div class="stat-card bg-white p-6 rounded-lg shadow text-center">
-                <div class="p-3 rounded-full bg-blue-100 text-blue-600 mx-auto w-12 h-12 flex items-center justify-center mb-3">
+                <div class="stat-icon-badge stat-icon-lavender mx-auto mb-3">
                     <i data-feather="credit-card" class="w-6 h-6"></i>
                 </div>
                 <h3 class="text-sm font-medium text-gray-500">Available Balance</h3>
-                <p class="text-3xl font-bold mt-2 text-blue-600">₦${(
-                    stats.availableBalance * 1500
-                ).toLocaleString()}</p>
+                <p class="text-3xl font-bold mt-2 text-ink">₦${Number(stats.availableBalance || 0).toLocaleString()}</p>
             </div>
             <div class="stat-card bg-white p-6 rounded-lg shadow text-center">
-                <div class="p-3 rounded-full bg-yellow-100 text-yellow-600 mx-auto w-12 h-12 flex items-center justify-center mb-3">
+                <div class="stat-icon-badge stat-icon-peach mx-auto mb-3">
                     <i data-feather="trending-up" class="w-6 h-6"></i>
                 </div>
                 <h3 class="text-sm font-medium text-gray-500">This Month</h3>
-                <p class="text-3xl font-bold mt-2 text-yellow-600">₦${(
-                    stats.thisMonth * 1500
-                ).toLocaleString()}</p>
+                <p class="text-3xl font-bold mt-2 text-peach">₦${Number(stats.thisMonth || 0).toLocaleString()}</p>
             </div>
             <div class="stat-card bg-white p-6 rounded-lg shadow text-center">
-                <div class="p-3 rounded-full bg-purple-100 text-purple-600 mx-auto w-12 h-12 flex items-center justify-center mb-3">
+                <div class="stat-icon-badge stat-icon-lavender mx-auto mb-3">
                     <i data-feather="target" class="w-6 h-6"></i>
                 </div>
                 <h3 class="text-sm font-medium text-gray-500">Goal Progress</h3>
-                <p class="text-3xl font-bold mt-2 text-purple-600">${
-                    stats.goalProgress
-                }%</p>
+                <p class="text-3xl font-bold mt-2 text-lavender">${stats.goalProgress}%</p>
             </div>
         </div>
 
         <!-- Financial Management -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <!-- Withdrawal & Payment -->
             <div class="bg-white rounded-lg shadow">
                 <div class="p-6 border-b border-gray-200">
                     <h3 class="text-xl font-bold text-gray-900">Withdrawals & Payments</h3>
                     <p class="text-gray-600">Manage your earnings</p>
                 </div>
                 <div class="p-6 space-y-4">
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="alert-box alert-box-lavender rounded-lg p-4">
                         <h4 class="font-semibold text-gray-900 mb-2">Quick Withdrawal</h4>
                         <p class="text-gray-600 text-sm mb-4">Withdraw your available balance to your bank account or mobile money.</p>
                         <div class="flex items-center justify-between mb-4">
                             <span class="text-sm text-gray-600">Available for withdrawal:</span>
-                            <span class="font-bold text-green-600">₦${(
-                                stats.availableBalance * 1500
-                            ).toLocaleString()}</span>
+                            <span class="font-bold text-mint">₦${Number(stats.availableBalance || 0).toLocaleString()}</span>
                         </div>
                         <div class="flex space-x-2">
-                            <button class="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 text-sm font-medium" ${
-                                stats.availableBalance === 0 ? "disabled" : ""
-                            }>Withdraw All</button>
-                            <button class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 text-sm font-medium" ${
-                                stats.availableBalance === 0 ? "disabled" : ""
-                            }>Custom Amount</button>
+                            <button class="flex-1 dashboard-action dashboard-action-mint py-2 px-4 rounded-lg text-sm font-medium" ${stats.availableBalance === 0 ? "disabled" : ""}>Withdraw All</button>
+                            <button class="flex-1 dashboard-action dashboard-action-primary py-2 px-4 rounded-lg text-sm font-medium" ${stats.availableBalance === 0 ? "disabled" : ""}>Custom Amount</button>
                         </div>
                     </div>
                     
@@ -1020,24 +1097,23 @@ const apprenticeContentTemplates = {
                         <div class="space-y-3">
                             <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                                 <div class="flex items-center">
-                                    <i data-feather="credit-card" class="w-5 h-5 text-blue-600 mr-3"></i>
+                                    <i data-feather="credit-card" class="w-5 h-5 text-ink mr-3"></i>
                                     <span class="text-sm font-medium">Bank Transfer</span>
                                 </div>
-                                <span class="text-xs text-green-600">Connected</span>
+                                <span class="text-xs text-mint">Connected</span>
                             </div>
                             <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                                 <div class="flex items-center">
-                                    <i data-feather="smartphone" class="w-5 h-5 text-green-600 mr-3"></i>
+                                    <i data-feather="smartphone" class="w-5 h-5 text-mint mr-3"></i>
                                     <span class="text-sm font-medium">Mobile Money</span>
                                 </div>
-                                <button class="text-xs text-blue-600 hover:text-blue-700">Add Account</button>
+                                <button class="text-xs text-ink hover:text-navy">Add Account</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Earnings Chart -->
             <div class="bg-white rounded-lg shadow">
                 <div class="p-6 border-b border-gray-200">
                     <h3 class="text-xl font-bold text-gray-900">Earnings Trend</h3>
@@ -1045,108 +1121,19 @@ const apprenticeContentTemplates = {
                 </div>
                 <div class="p-6">
                     <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">December 2024</span>
-                            <span class="font-semibold text-green-600">₦${(
-                                stats.thisMonth * 1500
-                            ).toLocaleString()}</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-green-600 h-2 rounded-full" style="width: ${Math.min(
-                                100,
-                                (stats.thisMonth / 1000) * 100
-                            )}%"></div>
-                        </div>
-                        
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">November 2024</span>
-                            <span class="font-semibold text-green-600">₦${(
-                                Math.round(stats.totalEarned * 0.2) * 1500
-                            ).toLocaleString()}</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-green-600 h-2 rounded-full" style="width: ${Math.min(
-                                100,
-                                ((stats.totalEarned * 0.2) / 1000) * 100
-                            )}%"></div>
-                        </div>
-                        
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">October 2024</span>
-                            <span class="font-semibold text-green-600">₦${(
-                                Math.round(stats.totalEarned * 0.3) * 1500
-                            ).toLocaleString()}</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-green-600 h-2 rounded-full" style="width: ${Math.min(
-                                100,
-                                ((stats.totalEarned * 0.3) / 1000) * 100
-                            )}%"></div>
-                        </div>
-                        
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">September 2024</span>
-                            <span class="font-semibold text-green-600">₦${(
-                                Math.round(stats.totalEarned * 0.2) * 1500
-                            ).toLocaleString()}</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-green-600 h-2 rounded-full" style="width: ${Math.min(
-                                100,
-                                ((stats.totalEarned * 0.2) / 1000) * 100
-                            )}%"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-6 text-center">
-                        <button class="text-blue-600 hover:text-blue-700 font-medium">View Detailed Analytics →</button>
+                        ${trendMarkup}
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Recent Transactions -->
         <div class="bg-white rounded-lg shadow">
             <div class="p-6 border-b border-gray-200">
                 <h3 class="text-xl font-bold text-gray-900">Recent Transactions</h3>
                 <p class="text-gray-600">Your payment history</p>
             </div>
             <div class="p-6">
-                ${
-                    stats.totalEarned > 0
-                        ? `
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                            <div class="flex items-center">
-                                <div class="p-2 rounded-full bg-green-100 text-green-600 mr-4">
-                                    <i data-feather="plus" class="w-4 h-4"></i>
-                                </div>
-                                <div>
-                                    <h4 class="font-semibold text-gray-900">Completed Job</h4>
-                                    <p class="text-sm text-gray-600">Payment received for completed work</p>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <span class="font-bold text-green-600">+₦${(
-                                    Math.round(stats.totalEarned * 0.4) * 1500
-                                ).toLocaleString()}</span>
-                                <p class="text-xs text-gray-500">Completed</p>
-                            </div>
-                        </div>
-                    </div>
-                `
-                        : `
-                    <div class="text-center py-8">
-                        <i data-feather="dollar-sign" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
-                        <h4 class="text-lg font-semibold text-gray-700 mb-2">No Transactions Yet</h4>
-                        <p class="text-gray-500">Complete your first job to see earnings here!</p>
-                    </div>
-                `
-                }
-                
-                <div class="mt-6 text-center">
-                    <button class="text-blue-600 hover:text-blue-700 font-medium">View All Transactions →</button>
-                </div>
+                ${transactionsMarkup}
             </div>
         </div>
     `;
@@ -1162,9 +1149,9 @@ const apprenticeContentTemplates = {
                 <i data-feather="gift" class="w-16 h-16 text-gray-300 mx-auto mb-6"></i>
                 <h3 class="text-2xl font-bold text-gray-700 mb-4">Coming Soon</h3>
                 <p class="text-gray-600 mb-6">We're building amazing community features, learning resources, and exclusive extras for apprentices. Stay tuned for updates!</p>
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p class="text-blue-800 text-sm">Features in development:</p>
-                    <ul class="text-blue-700 text-sm mt-2 space-y-1">
+                <div class="alert-box alert-box-lavender rounded-lg p-4">
+                    <p class="text-navy text-sm">Features in development:</p>
+                    <ul class="text-navy text-sm mt-2 space-y-1">
                         <li>• Community events and workshops</li>
                         <li>• Learning hub with courses</li>
                         <li>• Digital store for selling work</li>
@@ -1181,7 +1168,7 @@ const apprenticeContentTemplates = {
                 <p class="text-gray-600">Showcase your skills and work samples</p>
             </div>
             <div class="flex space-x-3">
-                <button id="open-upload-modal" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                <button id="open-upload-modal" class="dashboard-action dashboard-action-primary px-6 py-2 rounded-lg">
                     <i data-feather="plus" class="w-4 h-4 inline mr-2"></i>Upload Work
                 </button>
             </div>
@@ -1257,7 +1244,7 @@ const apprenticeContentTemplates = {
                     <i data-feather="image" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
                     <h3 class="text-xl font-semibold text-gray-700 mb-2">No work uploaded yet</h3>
                     <p class="text-gray-500 mb-6">Start showcasing your skills to get discovered by potential clients</p>
-                    <button id="gallery-upload-btn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                    <button id="gallery-upload-btn" class="dashboard-action dashboard-action-primary px-6 py-2 rounded-lg">
                         Upload Your First Work
                     </button>
                 </div>
@@ -1282,19 +1269,19 @@ const apprenticeContentTemplates = {
     wallet: (userData) => `
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900 flex items-center">
-                <i class="fas fa-wallet mr-3 text-blue-600"></i> My Wallet
+                <i class="fas fa-wallet mr-3 text-ink"></i> My Wallet
             </h1>
             <p class="text-gray-600 mt-2">Manage your funds and transactions</p>
         </div>
         
         <div class="wallet-summary bg-white rounded-lg shadow-lg p-6 mb-6">
             <div class="wallet-balance text-center mb-6">
-                <div class="balance-amount text-4xl font-bold text-green-600 mb-2" id="wallet-balance">₦0.00</div>
+                <div class="balance-amount text-4xl font-bold text-mint mb-2" id="wallet-balance">₦0.00</div>
                 <div class="balance-points text-lg text-gray-600" id="wallet-points">0.00 pts</div>
             </div>
             
             <div class="wallet-actions flex gap-4 justify-center flex-wrap">
-                <button id="withdraw-funds-btn" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                <button id="withdraw-funds-btn" class="dashboard-action dashboard-action-mint px-6 py-3 rounded-lg transition-colors flex items-center">
                     <i class="fas fa-money-bill-wave mr-2"></i> Withdraw
                 </button>
                 <button id="view-transactions-btn" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors flex items-center">
@@ -1323,22 +1310,22 @@ const apprenticeContentTemplates = {
                 <!-- Edit Profile -->
                 <div>
                     <h3 class="text-lg leading-6 font-medium text-gray-900">Edit Profile & Skills</h3>
-                    <button id="open-edit-profile-modal" class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Edit Profile</button>
+                    <button id="open-edit-profile-modal" class="mt-4 dashboard-action dashboard-action-primary px-6 py-2 rounded-lg">Edit Profile</button>
                 </div>
                 <!-- Links -->
                 <div class="pt-8">
                      <h3 class="text-lg leading-6 font-medium text-gray-900">Information</h3>
                      <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <a href="#" class="text-blue-600 hover:underline">Terms & Conditions</a>
-                        <a href="#" class="text-blue-600 hover:underline">Referral Rules</a>
-                        <a href="#" class="text-blue-600 hover:underline">FAQ</a>
+                        <a href="#" class="text-ink hover:underline">Terms & Conditions</a>
+                        <a href="#" class="text-ink hover:underline">Referral Rules</a>
+                        <a href="#" class="text-ink hover:underline">FAQ</a>
                     </div>
                 </div>
                 <!-- Settings -->
                 <div class="pt-8">
                      <h3 class="text-lg leading-6 font-medium text-gray-900">Password & Notifications</h3>
                      <div class="mt-4 space-y-4">
-                        <button class="text-left text-blue-600 hover:underline">Change Password</button>
+                        <button class="text-left text-ink hover:underline">Change Password</button>
                         <div class="relative flex items-start">
                             <div class="flex items-center h-5">
                                 <input id="notifications-email" name="notifications-email" type="checkbox" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded" checked>
@@ -1351,16 +1338,6 @@ const apprenticeContentTemplates = {
                      </div>
                 </div>
                 
-                <!-- Storage Test (for debugging) -->
-                <div class="pt-8">
-                     <h3 class="text-lg leading-6 font-medium text-gray-900">Storage & System</h3>
-                     <div class="mt-4 space-y-4">
-                        <button id="test-storage-btn" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm">
-                            <i data-feather="database" class="w-4 h-4 inline mr-2"></i>Test Storage Configuration
-                        </button>
-                        <p class="text-xs text-gray-500">Use this to diagnose upload issues. Check browser console for results.</p>
-                     </div>
-                </div>
              </div>
         </div>
     `,
@@ -1371,12 +1348,12 @@ const apprenticeContentTemplates = {
         </div>
         
         <!-- Auto-Response Message (Hidden Initially) -->
-        <div id="contact-auto-response" class="hidden bg-green-50 border-l-4 border-green-500 p-6 rounded-lg mb-8">
+        <div id="contact-auto-response" class="hidden alert-box alert-box-mint p-6 rounded-lg mb-8">
             <div class="flex items-start">
-                <i data-feather="check-circle" class="w-6 h-6 text-green-500 mr-3 flex-shrink-0"></i>
+                <i data-feather="check-circle" class="w-6 h-6 text-mint mr-3 flex-shrink-0"></i>
                 <div>
-                    <h3 class="font-semibold text-green-800 mb-2">Thank you for contacting Craftnet.</h3>
-                    <p class="text-green-700">
+                    <h3 class="font-semibold text-mint mb-2">Thank you for contacting Craftnet.</h3>
+                    <p class="text-mint">
                         We have received your request and will review it within 72 hours.<br>
                         You will be notified once there is an update.
                     </p>
@@ -1398,7 +1375,7 @@ const apprenticeContentTemplates = {
                         name="full-name"
                         required
                         value="${userData.name || ''}"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus-theme text-base"
                         placeholder="Enter your full name"
                     />
                     <div id="dashboard-full-name-error" class="form-error hidden text-red-600 text-sm mt-1"></div>
@@ -1415,7 +1392,7 @@ const apprenticeContentTemplates = {
                         name="email"
                         required
                         value="${userData.email || ''}"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus-theme text-base"
                         placeholder="your.email@example.com"
                     />
                     <div id="dashboard-email-error" class="form-error hidden text-red-600 text-sm mt-1"></div>
@@ -1430,7 +1407,7 @@ const apprenticeContentTemplates = {
                         type="tel"
                         id="dashboard-phone"
                         name="phone"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus-theme text-base"
                         placeholder="+234 800 000 0000"
                     />
                     <div id="dashboard-phone-error" class="form-error hidden text-red-600 text-sm mt-1"></div>
@@ -1445,7 +1422,7 @@ const apprenticeContentTemplates = {
                         id="dashboard-issue-category"
                         name="issue-category"
                         required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus-theme text-base"
                     >
                         <option value="">Select a category</option>
                         <option value="Payment Issue">Payment Issue</option>
@@ -1468,7 +1445,7 @@ const apprenticeContentTemplates = {
                         id="dashboard-subject"
                         name="subject"
                         required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus-theme text-base"
                         placeholder="Brief description of your issue"
                     />
                     <div id="dashboard-subject-error" class="form-error hidden text-red-600 text-sm mt-1"></div>
@@ -1485,7 +1462,7 @@ const apprenticeContentTemplates = {
                         required
                         rows="6"
                         minlength="10"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base resize-y"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus-theme text-base resize-y"
                         placeholder="Please provide details about your issue (minimum 10 characters)"
                     ></textarea>
                     <div id="dashboard-message-error" class="form-error hidden text-red-600 text-sm mt-1"></div>
@@ -1504,7 +1481,7 @@ const apprenticeContentTemplates = {
                         id="dashboard-attachment"
                         name="attachment"
                         accept="image/*,.pdf"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus-theme text-base file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file-theme-peach"
                     />
                     <div id="dashboard-attachment-error" class="form-error hidden text-red-600 text-sm mt-1"></div>
                     <div class="text-sm text-gray-500 mt-1">
@@ -1517,7 +1494,7 @@ const apprenticeContentTemplates = {
                 <button
                     type="submit"
                     id="dashboard-submit-btn"
-                    class="w-full bg-blue-600 text-white px-6 py-4 rounded-lg font-semibold text-base shadow-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px] flex items-center justify-center"
+                    class="w-full dashboard-action dashboard-action-primary px-6 py-4 rounded-lg font-semibold text-base shadow-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px] flex items-center justify-center"
                 >
                     <span id="dashboard-submit-text">Submit Request</span>
                     <span id="dashboard-submit-spinner" class="hidden ml-2">
@@ -1526,7 +1503,7 @@ const apprenticeContentTemplates = {
                 </button>
 
                 <!-- Error Message -->
-                <div id="dashboard-form-error" class="hidden mt-4 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                <div id="dashboard-form-error" class="hidden mt-4 alert-box alert-box-pink p-4 rounded-lg">
                     <div class="flex items-start">
                         <i data-feather="alert-circle" class="w-5 h-5 text-red-500 mr-3 flex-shrink-0"></i>
                         <p id="dashboard-form-error-text" class="text-red-700 text-sm"></p>
@@ -1538,7 +1515,7 @@ const apprenticeContentTemplates = {
         <!-- Help Center Link -->
         <div class="mt-8 text-center">
             <p class="text-gray-600 mb-4">Looking for quick answers?</p>
-            <a href="help-center.html" class="text-blue-600 hover:text-blue-800 underline">
+            <a href="help-center.html" class="text-ink hover:text-navy underline">
                 Visit our Help Center
             </a>
         </div>
@@ -1548,16 +1525,15 @@ const apprenticeContentTemplates = {
 // --- Member Templates ---
 const memberContentTemplates = {
     home: (userData) => `
-        <div class="mb-8">
+        <div class="dashboard-welcome mb-8">
             <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome back, ${
                 userData.name || "User"
             }!</h1>
             <p class="text-gray-600">Here's your activity overview</p>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
             <div class="stat-card bg-white p-6 rounded-lg shadow">
                 <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-green-100 text-green-600"><i data-feather="user-plus"></i></div>
+                    <div class="stat-icon-badge stat-icon-mint"><i data-feather="user-plus"></i></div>
                     <div class="ml-4">
                         <p class="text-sm text-gray-500">Referral Earnings</p>
                         <p class="text-2xl font-bold">₦${Number(
@@ -1568,7 +1544,7 @@ const memberContentTemplates = {
             </div>
             <div class="stat-card bg-white p-6 rounded-lg shadow">
                 <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-blue-100 text-blue-600"><i data-feather="award"></i></div>
+                    <div class="stat-icon-badge stat-icon-lavender"><i data-feather="award"></i></div>
                     <div class="ml-4">
                         <p class="text-sm text-gray-500">Eligibility Points</p>
                         <p class="text-2xl font-bold">${(
@@ -1579,7 +1555,7 @@ const memberContentTemplates = {
             </div>
             <div class="stat-card bg-white p-6 rounded-lg shadow">
                 <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-indigo-100 text-indigo-600"><i data-feather="users"></i></div>
+                    <div class="stat-icon-badge stat-icon-peach"><i data-feather="users"></i></div>
                     <div class="ml-4">
                         <p class="text-sm text-gray-500">Followers</p>
                         <p class="text-2xl font-bold">${
@@ -1589,9 +1565,13 @@ const memberContentTemplates = {
                 </div>
             </div>
         </div>
-        <div class="mt-8 bg-white p-6 rounded-lg shadow">
+        <div class="recent-activity-panel mt-8 bg-white p-6 rounded-lg shadow">
             <h3 class="text-xl font-bold mb-4">Recent Activity</h3>
-            <p class="text-gray-600">Your recent points history and notifications will appear here.</p>
+            <div class="empty-state-dashed">
+                <i data-feather="inbox" class="w-5 h-5"></i>
+                <p>No recent activity yet.</p>
+            </div>
+        </div>
         </div>
     `,
     explore: (userData, recommendations = [], searchResults = []) => {
@@ -1621,11 +1601,11 @@ const memberContentTemplates = {
                                 ? "skill"
                                 : "creative type"
                         }, or location..." 
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus-theme"
                     >
                 </div>
                 <div>
-                    <select id="filter-creative-type" class="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <select id="filter-creative-type" class="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus-theme">
                         <option value="">${
                             currentUserRole === "member"
                                 ? "All Skills"
@@ -1651,7 +1631,7 @@ const memberContentTemplates = {
                         }
                     </select>
                 </div>
-                <button id="search-btn" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center">
+                <button id="search-btn" class="px-6 py-3 dashboard-action dashboard-action-primary rounded-lg flex items-center">
                     <i data-feather="search" class="w-4 h-4 mr-2"></i>
                     Search
                 </button>
@@ -1734,19 +1714,19 @@ const memberContentTemplates = {
                                 currentUserRole === "member" &&
                                 user.role === "apprentice"
                                     ? `
-                            <button class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 view-profile-btn"
+                            <button class="flex-1 dashboard-action dashboard-action-primary py-2 rounded-lg view-profile-btn"
                                     data-user-id="${user.id}"
                                     data-user-name="${(user.name || user.email || "User").replace(/"/g, "&quot;")}">
                                 View
                             </button>
-                            <button class="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 personal-hire-btn"
+                            <button class="flex-1 dashboard-action dashboard-action-mint py-2 rounded-lg personal-hire-btn"
                                     data-user-id="${user.id}"
                                     data-user-name="${(user.name || user.email || "Apprentice").replace(/"/g, "&quot;")}">
                                 Personal Hire
                             </button>
                             `
                                     : `
-                            <button class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 ${
+                            <button class="flex-1 dashboard-action dashboard-action-primary py-2 rounded-lg ${
                                 user.role === "apprentice" ? "more-btn" : "follow-btn"
                             }"
                                     data-user-id="${user.id}"
@@ -1852,7 +1832,7 @@ const memberContentTemplates = {
                             }
                         </div>
                         <div class="explore-card-actions">
-                            <button class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 ${primaryBtnClass}"
+                            <button class="flex-1 dashboard-action dashboard-action-primary py-2 rounded-lg ${primaryBtnClass}"
                                     data-user-id="${user.id}"
                                     data-user-name="${(user.name || user.email || "User").replace(/"/g, "&quot;")}">
                                 ${primaryBtnText}
@@ -1860,7 +1840,7 @@ const memberContentTemplates = {
                             ${
                                 currentUserRole === "member" &&
                                 user.role === "apprentice"
-                                    ? `<button class="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 personal-job-request-btn"
+                                    ? `<button class="flex-1 dashboard-action dashboard-action-mint py-2 rounded-lg personal-job-request-btn"
                                                data-apprentice-id="${user.id}"
                                                data-apprentice-name="${user.name || user.email}">
                                             Send Personal Job Request
@@ -1905,7 +1885,7 @@ const memberContentTemplates = {
                     <p class="text-sm text-gray-500 mt-2">${
                         userData.email || ""
                     }</p>
-                    <button id="open-edit-profile-modal" class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Edit Profile</button>
+                    <button id="open-edit-profile-modal" class="mt-4 dashboard-action dashboard-action-primary px-6 py-2 rounded-lg">Edit Profile</button>
                 </div>
             </div>
             <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1961,7 +1941,7 @@ const memberContentTemplates = {
                 <p class="text-gray-600">Showcase your creative work</p>
             </div>
             <div class="flex space-x-3">
-                <button id="open-upload-modal" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                <button id="open-upload-modal" class="dashboard-action dashboard-action-primary px-6 py-2 rounded-lg">
                     <i data-feather="plus" class="w-4 h-4 inline mr-2"></i>Upload Work
                 </button>
             </div>
@@ -2038,7 +2018,7 @@ const memberContentTemplates = {
                     <h3 class="text-xl font-semibold text-gray-700 mb-2">No work uploaded yet</h3>
                     <p class="text-gray-500 mb-6">Start showcasing your creative work to get discovered</p>
                     <div class="space-y-4">
-                        <button id="gallery-upload-btn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 mx-2">
+                        <button id="gallery-upload-btn" class="dashboard-action dashboard-action-primary px-6 py-2 rounded-lg mx-2">
                             Upload Your First Work
                         </button>
                     </div>
@@ -2080,7 +2060,7 @@ const memberContentTemplates = {
                     return `<p class="text-red-600 font-medium">Your ${rawPlan} subscription expired on ${expiredOn}. Renew to regain access to premium features.</p>`;
                 }
                 const until = expiresAt ? expiresAt.toLocaleDateString() : "unknown date";
-                return `<p class="text-green-600 font-medium">Your ${rawPlan} subscription is active until ${until}.</p>`;
+                return `<p class="text-mint font-medium">Your ${rawPlan} subscription is active until ${until}.</p>`;
             })()}
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -2089,11 +2069,11 @@ const memberContentTemplates = {
                     ([key, plan]) => `
                 <div class="bg-white p-6 rounded-lg shadow ${
                     getEffectiveSubscriptionPlanKey(userData) === key
-                        ? "ring-2 ring-blue-500"
+                        ? "ring-2 ring-ink-soft"
                         : ""
                 }">
                     <h3 class="text-xl font-bold mb-2">${plan.name}</h3>
-                    <p class="text-3xl font-bold text-blue-600 mb-4">₦${
+                    <p class="text-3xl font-bold text-ink mb-4">₦${
                         plan.price
                     }<span class="text-sm text-gray-500">/month</span></p>
                     <ul class="space-y-2 mb-6">
@@ -2106,13 +2086,13 @@ const memberContentTemplates = {
                                   ]
                                       .map(
                                           (feature) =>
-                                              `<li class="flex items-center"><i data-feather="check" class="w-4 h-4 text-green-500 mr-2"></i>${feature}</li>`
+                                              `<li class="flex items-center"><i data-feather="check" class="w-4 h-4 text-mint mr-2"></i>${feature}</li>`
                                       )
                                       .join("")
                                 : plan.unlocks
                                       .map(
                                           (feature) =>
-                                              `<li class="flex items-center"><i data-feather="check" class="w-4 h-4 text-green-500 mr-2"></i>${feature.replace(
+                                              `<li class="flex items-center"><i data-feather="check" class="w-4 h-4 text-mint mr-2"></i>${feature.replace(
                                                   "_",
                                                   " "
                                               )}</li>`
@@ -2129,14 +2109,14 @@ const memberContentTemplates = {
                                 return '<button class="w-full bg-gray-300 text-gray-600 px-4 py-2 rounded-lg cursor-not-allowed">Current Plan</button>';
                             }
                             if (!isActive) {
-                                return '<button class="w-full bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 upgrade-btn" data-plan="' + key + '">Renew Plan</button>';
+                                return '<button class="w-full dashboard-action dashboard-action-primary px-4 py-2 rounded-lg upgrade-btn" data-plan="' + key + '">Renew Plan</button>';
                             }
                             return '<button class="w-full bg-gray-300 text-gray-600 px-4 py-2 rounded-lg cursor-not-allowed">Current Plan</button>';
                         }
                         if (plan.price === 0) {
                             return '<button class="w-full bg-gray-300 text-gray-600 px-4 py-2 rounded-lg cursor-not-allowed">Free Plan</button>';
                         }
-                        return '<button class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 upgrade-btn" data-plan="' + key + '">Upgrade Now</button>';
+                        return '<button class="w-full dashboard-action dashboard-action-primary px-4 py-2 rounded-lg upgrade-btn" data-plan="' + key + '">Upgrade Now</button>';
                     })()}
                 </div>
             `
@@ -2264,10 +2244,10 @@ const memberContentTemplates = {
         
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             <!-- Wallet Balance Card -->
-            <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
+            <div class="gradient-ink rounded-lg shadow-lg p-6 text-white">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-blue-100 text-sm">Available</p>
+                        <p class="gradient-tint text-sm">Available</p>
                         <p class="text-3xl font-bold">₦${availableNgn.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
                     </div>
                     <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
@@ -2277,10 +2257,10 @@ const memberContentTemplates = {
             </div>
 
             <!-- Locked Balance Card -->
-            <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg shadow-lg p-6 text-white">
+            <div class="gradient-peach-deep rounded-lg shadow-lg p-6 text-white">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-yellow-100 text-sm">Locked</p>
+                        <p class="gradient-tint text-sm">Locked</p>
                         <p class="text-3xl font-bold">₦${lockedNgn.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
                     </div>
                     <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
@@ -2290,12 +2270,12 @@ const memberContentTemplates = {
             </div>
 
             <!-- Total Earned Card -->
-            <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
+            <div class="gradient-mint-deep rounded-lg shadow-lg p-6 text-white">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-green-100 text-sm">Total Earned</p>
+                        <p class="gradient-tint text-sm">Total Earned</p>
                         <p class="text-3xl font-bold">₦${totalNgn.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-                        <p class="text-green-100 text-sm">(all time)</p>
+                        <p class="gradient-tint text-sm">(all time)</p>
                     </div>
                     <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
                         <i data-feather="trending-up" class="w-6 h-6"></i>
@@ -2317,7 +2297,7 @@ const memberContentTemplates = {
                     </div>
                     `
                             : `
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="alert-box alert-box-lavender rounded-lg p-4">
                         <h4 class="font-semibold text-gray-900 mb-2">Share Your Invite Link</h4>
                         <p class="text-gray-600 text-sm mb-4">Share this link with friends and earn referral bonuses from their activities.</p>
                         
@@ -2328,7 +2308,7 @@ const memberContentTemplates = {
                                 <input type="text" value="${inviteLink}" readonly 
                                        class="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm font-mono">
                                 <button onclick="copyToClipboard('${inviteLink}')" 
-                                        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
+                                        class="dashboard-action dashboard-action-primary px-4 py-2 rounded-lg text-sm">
                                     Copy
                                 </button>
                             </div>
@@ -2355,7 +2335,7 @@ const memberContentTemplates = {
                                 }</p>
                                 ${
                                     isMember
-                                        ? `<button onclick="location.reload()" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Refresh Page</button>`
+                                        ? `<button onclick="location.reload()" class="mt-2 dashboard-action dashboard-action-primary px-4 py-2 rounded-lg text-sm">Refresh Page</button>`
                                         : ""
                                 }
                             </div>
@@ -2377,8 +2357,8 @@ const memberContentTemplates = {
                                         (earning) => `
                                     <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
                                         <div class="flex items-center">
-                                            <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                                                <span class="text-green-600 font-semibold text-sm">${
+                                            <div class="w-8 h-8 bg-chip-mint rounded-full flex items-center justify-center mr-3">
+                                                <span class="text-mint font-semibold text-sm">${
                                                     earning.source_type === 'apprentice_commission' ? 'J' : 'S'
                                                 }</span>
                                             </div>
@@ -2393,7 +2373,7 @@ const memberContentTemplates = {
                                                 ).toLocaleDateString()}</p>
                                             </div>
                                         </div>
-                                        <span class="text-green-600 font-semibold">₦${
+                                        <span class="text-mint font-semibold">₦${
                                             Number(earning.amount_ngn || (earning.event_type === 'apprentice_job' ? 50 : 150)).toLocaleString(undefined, { maximumFractionDigits: 2 })
                                         }</span>
                                     </div>
@@ -2421,19 +2401,19 @@ const memberContentTemplates = {
                     `
                             : !isActiveMember
                             ? `
-                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                            <p class="text-yellow-800 font-medium">Your referral earnings are locked.</p>
-                            <p class="text-yellow-700 text-sm mt-1">Renew your Creative Plan (₦1,500) to unlock your balance of ₦${lockedNgn.toLocaleString(undefined, { maximumFractionDigits: 2 })}.</p>
+                        <div class="alert-box alert-box-peach rounded-lg p-4">
+                            <p class="text-peach font-medium">Your referral earnings are locked.</p>
+                            <p class="text-peach text-sm mt-1">Renew your Creative Plan (₦1,500) to unlock your balance of ₦${lockedNgn.toLocaleString(undefined, { maximumFractionDigits: 2 })}.</p>
                         </div>
                     `
                             : withdrawalWindowOpen
                             ? `
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div class="alert-box alert-box-mint rounded-lg p-4">
                             <div class="flex items-center">
-                                <i data-feather="check-circle" class="w-5 h-5 text-green-600 mr-2"></i>
-                                <p class="text-green-800 font-medium">Withdrawal window is open!</p>
+                                <i data-feather="check-circle" class="w-5 h-5 text-mint mr-2"></i>
+                                <p class="text-mint font-medium">Withdrawal window is open!</p>
                             </div>
-                            <p class="text-green-700 text-sm mt-1">You can request withdrawals between the 1st and 7th of each month.</p>
+                            <p class="text-mint text-sm mt-1">You can request withdrawals between the 1st and 7th of each month.</p>
                         </div>
                         
                         <div class="space-y-4">
@@ -2445,26 +2425,26 @@ const memberContentTemplates = {
                                     min="1000" 
                                     max="${availableNgn || 0}"
                                     placeholder="Minimum ₦1,000"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus-theme"
                                 >
                                 <p class="text-xs text-gray-500 mt-1">Available: ₦${availableNgn.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
                             </div>
                             
                             <button 
                                 id="request-withdrawal" 
-                                class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 font-medium"
+                                class="w-full dashboard-action dashboard-action-primary py-2 px-4 rounded-lg font-medium"
                             >
                                 Request Withdrawal
                             </button>
                         </div>
                     `
                             : `
-                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div class="alert-box alert-box-peach rounded-lg p-4">
                             <div class="flex items-center">
-                                <i data-feather="clock" class="w-5 h-5 text-yellow-600 mr-2"></i>
-                                <p class="text-yellow-800 font-medium">Withdrawal window is closed</p>
+                                <i data-feather="clock" class="w-5 h-5 text-peach mr-2"></i>
+                                <p class="text-peach font-medium">Withdrawal window is closed</p>
                             </div>
-                            <p class="text-yellow-700 text-sm mt-1">Withdrawal window is closed. Come back between the 1st and 7th of each month.</p>
+                            <p class="text-peach text-sm mt-1">Withdrawal window is closed. Come back between the 1st and 7th of each month.</p>
                         </div>
                     `
                     }
@@ -2485,10 +2465,10 @@ const memberContentTemplates = {
                                             <p class="text-xs text-gray-500">${new Date(request.created_at).toLocaleDateString()}</p>
                                         </div>
                                         <span class="px-2 py-1 text-xs rounded-full ${
-                                            request.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                            request.status === 'processing' ? 'bg-blue-100 text-blue-800' :
-                                            request.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                                            'bg-yellow-100 text-yellow-800'
+                                            request.status === 'completed' ? 'status-badge status-badge-mint' :
+                                            request.status === 'processing' ? 'status-badge status-badge-lavender' :
+                                            request.status === 'rejected' ? 'status-badge status-badge-pink' :
+                                            'status-badge status-badge-peach'
                                         }">
                                             ${request.status}
                                         </span>
@@ -2511,9 +2491,9 @@ const memberContentTemplates = {
                 <div>
                     <h4 class="font-semibold text-gray-900 mb-3">Commission Rates</h4>
                     <div class="space-y-2">
-                        <div class="flex justify-between items-center p-2 bg-blue-50 rounded">
+                        <div class="flex justify-between items-center p-2 bg-chip-lavender rounded">
                             <span class="text-sm">Creative (₦1,500/mo)</span>
-                            <span class="font-semibold text-blue-600">10%</span>
+                            <span class="font-semibold text-ink">10%</span>
                         </div>
                     </div>
                 </div>
@@ -2521,15 +2501,15 @@ const memberContentTemplates = {
                     <h4 class="font-semibold text-gray-900 mb-3">Earning Sources</h4>
                     <div class="space-y-2">
                         <div class="flex items-center p-2 bg-gray-50 rounded">
-                            <i data-feather="briefcase" class="w-4 h-4 text-blue-500 mr-2"></i>
+                            <i data-feather="briefcase" class="w-4 h-4 text-lavender mr-2"></i>
                             <span class="text-sm">Apprentice job commissions</span>
                         </div>
                         <div class="flex items-center p-2 bg-gray-50 rounded">
-                            <i data-feather="credit-card" class="w-4 h-4 text-green-500 mr-2"></i>
+                            <i data-feather="credit-card" class="w-4 h-4 text-mint mr-2"></i>
                             <span class="text-sm">Member subscription bonuses</span>
                         </div>
                         <div class="flex items-center p-2 bg-gray-50 rounded">
-                            <i data-feather="dollar-sign" class="w-4 h-4 text-yellow-500 mr-2"></i>
+                            <i data-feather="dollar-sign" class="w-4 h-4 text-peach mr-2"></i>
                             <span class="text-sm">Member signup: +₦150, Apprentice job: +₦50</span>
                         </div>
                     </div>
@@ -2588,47 +2568,47 @@ const memberContentTemplates = {
         <!-- Job Stats Overview -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="stat-card bg-white p-6 rounded-lg shadow text-center">
-                <div class="p-3 rounded-full bg-blue-100 text-blue-600 mx-auto w-12 h-12 flex items-center justify-center mb-3">
+                <div class="stat-icon-badge stat-icon-lavender mx-auto mb-3">
                     <i data-feather="briefcase" class="w-6 h-6"></i>
                 </div>
                 <h3 class="text-sm font-medium text-gray-500">Total Jobs</h3>
-                <p class="text-3xl font-bold mt-2 text-blue-600">${
+                <p class="text-3xl font-bold mt-2 text-ink">${
                     clientStats.totalJobs
                 }</p>
             </div>
             <div class="stat-card bg-white p-6 rounded-lg shadow text-center">
-                <div class="p-3 rounded-full bg-green-100 text-green-600 mx-auto w-12 h-12 flex items-center justify-center mb-3">
+                <div class="stat-icon-badge stat-icon-mint mx-auto mb-3">
                     <i data-feather="clock" class="w-6 h-6"></i>
                 </div>
                 <h3 class="text-sm font-medium text-gray-500">Open Jobs</h3>
-                <p class="text-3xl font-bold mt-2 text-green-600">${
+                <p class="text-3xl font-bold mt-2 text-mint">${
                     clientStats.openJobs
                 }</p>
             </div>
             <div class="stat-card bg-white p-6 rounded-lg shadow text-center">
-                <div class="p-3 rounded-full bg-yellow-100 text-yellow-600 mx-auto w-12 h-12 flex items-center justify-center mb-3">
+                <div class="stat-icon-badge stat-icon-peach mx-auto mb-3">
                     <i data-feather="play" class="w-6 h-6"></i>
                 </div>
                 <h3 class="text-sm font-medium text-gray-500">In Progress</h3>
-                <p class="text-3xl font-bold mt-2 text-yellow-600">${
+                <p class="text-3xl font-bold mt-2 text-peach">${
                     clientStats.inProgressJobs
                 }</p>
             </div>
             <div class="stat-card bg-white p-6 rounded-lg shadow text-center">
-                <div class="p-3 rounded-full bg-orange-100 text-orange-600 mx-auto w-12 h-12 flex items-center justify-center mb-3">
+                <div class="stat-icon-badge stat-icon-peach mx-auto mb-3">
                     <i data-feather="check-circle" class="w-6 h-6"></i>
                 </div>
                 <h3 class="text-sm font-medium text-gray-500">Pending Review</h3>
-                <p class="text-3xl font-bold mt-2 text-orange-600">${
+                <p class="text-3xl font-bold mt-2 text-peach">${
                     clientStats.pendingReviewJobs
                 }</p>
             </div>
             <div class="stat-card bg-white p-6 rounded-lg shadow text-center">
-                <div class="p-3 rounded-full bg-purple-100 text-purple-600 mx-auto w-12 h-12 flex items-center justify-center mb-3">
+                <div class="stat-icon-badge stat-icon-lavender mx-auto mb-3">
                     <i data-feather="dollar-sign" class="w-6 h-6"></i>
                 </div>
                 <h3 class="text-sm font-medium text-gray-500">Total Spent</h3>
-                <p class="text-3xl font-bold mt-2 text-purple-600">₦${(
+                <p class="text-3xl font-bold mt-2 text-lavender">₦${(
                     clientStats.totalSpent * 1500
                 ).toLocaleString()}</p>
             </div>
@@ -2642,8 +2622,8 @@ const memberContentTemplates = {
                 ${
                     subscriptionPlan === "free"
                         ? `
-                        <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                            <p class="text-sm text-yellow-800">
+                        <div class="mt-3 p-3 alert-box alert-box-peach rounded-lg">
+                            <p class="text-sm text-peach">
                                 <i data-feather="info" class="w-4 h-4 inline mr-1"></i>
                                 <strong>Free Plan Limit:</strong> You have posted <strong>${monthlyJobCount} of 3</strong> jobs this month.
                                 ${monthlyJobCount >= 3 
@@ -2662,13 +2642,13 @@ const memberContentTemplates = {
                         <div>
                             <label for="job-title" class="block text-sm font-medium text-gray-700 mb-2">Job Title</label>
                             <input type="text" id="job-title" name="title" required
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus-theme"
                                 placeholder="e.g., Website Design for Restaurant">
                         </div>
                         <div>
                             <label for="job-location" class="block text-sm font-medium text-gray-700 mb-2">Location</label>
                             <input type="text" id="job-location" name="location"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus-theme"
                                 placeholder="e.g., Lagos, Nigeria or Remote">
                         </div>
                     </div>
@@ -2676,7 +2656,7 @@ const memberContentTemplates = {
                     <div>
                         <label for="job-description" class="block text-sm font-medium text-gray-700 mb-2">Job Description</label>
                         <textarea id="job-description" name="description" rows="4" required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus-theme"
                             placeholder="Describe the job requirements, deliverables, and any specific details..."></textarea>
                     </div>
                     
@@ -2684,21 +2664,21 @@ const memberContentTemplates = {
                         <div>
                             <label for="job-fixed-price" class="block text-sm font-medium text-gray-700 mb-2">Fixed Price (₦)</label>
                             <input type="number" id="job-fixed-price" name="fixedPrice" required min="3000" max="50000"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus-theme"
                                 placeholder="25000">
                             <p class="text-xs text-gray-500 mt-1">Range: ₦3,000 - ₦50,000</p>
                         </div>
                         <div>
                             <label for="job-deadline" class="block text-sm font-medium text-gray-700 mb-2">Deadline</label>
                             <input type="date" id="job-deadline" name="deadline" required
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus-theme">
                         </div>
                     </div>
                     
                     <div>
                         <label for="job-skills" class="block text-sm font-medium text-gray-700 mb-2">Required Skills</label>
                         <select id="job-skills" name="skillsRequired" multiple
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus-theme">
                             <option value="photography">Photography</option>
                             <option value="design">Design</option>
                             <option value="programming">Programming</option>
@@ -2712,7 +2692,7 @@ const memberContentTemplates = {
                     
                     <div class="flex justify-end">
                         <button type="submit" id="create-job-btn"
-                            class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium flex items-center ${
+                            class="dashboard-action dashboard-action-primary px-6 py-3 rounded-lg font-medium flex items-center ${
                                 subscriptionPlan === "free" && monthlyJobCount >= 3 
                                     ? "opacity-50 cursor-not-allowed" 
                                     : ""
@@ -2752,7 +2732,7 @@ const memberContentTemplates = {
                                             }</h4>
                                             ${
                                                 job.job_type === 'personal'
-                                                    ? `<span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full font-medium">Personal Request</span>`
+                                                    ? `<span class="status-badge status-badge-lavender text-xs px-2 py-1 rounded-full font-medium">Personal Request</span>`
                                                     : ''
                                             }
                                         </div>
@@ -2863,7 +2843,7 @@ const memberContentTemplates = {
                                                         ${
                                                             app.cv_url
                                                                 ? `
-                                                            <button class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 view-cv-btn" data-cv-url="${app.cv_url}" data-app-id="${app.id}">
+                                                            <button class="dashboard-action dashboard-action-primary px-3 py-1 rounded text-sm view-cv-btn" data-cv-url="${app.cv_url}" data-app-id="${app.id}">
                                                                 <i data-feather="file-text" class="w-3 h-3 inline mr-1"></i> View CV
                                                             </button>
                                                         `
@@ -2873,7 +2853,7 @@ const memberContentTemplates = {
                                                             app.status ===
                                                             "pending"
                                                                 ? `
-                                                            <button class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 accept-app-btn" data-app-id="${app.id}">Accept</button>
+                                                            <button class="dashboard-action dashboard-action-mint px-3 py-1 rounded text-sm accept-app-btn" data-app-id="${app.id}">Accept</button>
                                                             <button class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 reject-app-btn" data-app-id="${app.id}">Reject</button>
                                                         `
                                                                 : `
@@ -2912,12 +2892,12 @@ const memberContentTemplates = {
                                             <!-- Progress updates will be loaded here -->
                                         </div>
                                         <div class="mt-4">
-                                            <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm load-progress-updates-btn" 
+                                            <button class="dashboard-action dashboard-action-primary px-4 py-2 rounded-lg text-sm load-progress-updates-btn" 
                                                     data-job-id="${job.id}">
                                                 <i data-feather="refresh-cw" class="w-4 h-4 mr-2"></i>
                                                 Load Progress Updates
                                             </button>
-                                            <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm view-final-submission-btn"
+                                            <button class="dashboard-action dashboard-action-mint px-4 py-2 rounded-lg text-sm view-final-submission-btn"
                                                     data-job-id="${job.id}">
                                                 <i data-feather="check-circle" class="w-4 h-4 mr-2"></i>
                                                 View Final Submission
@@ -2937,13 +2917,13 @@ const memberContentTemplates = {
                                             ? `
                                         <div class="flex items-center space-x-2">
                                             <span class="text-sm text-gray-600">Review required</span>
-                                            <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm review-job-btn" data-job-id="${job.id}">Review Job</button>
+                                            <button class="dashboard-action dashboard-action-mint px-4 py-2 rounded-lg text-sm review-job-btn" data-job-id="${job.id}">Review Job</button>
                                         </div>
                                     `
                                             : job.status === "disputed"
                                             ? `
                                         <div class="flex items-center space-x-2">
-                                            <span class="bg-red-100 text-red-800 text-sm font-medium px-3 py-1 rounded-full">
+                                            <span class="status-badge status-badge-pink text-sm font-medium px-3 py-1 rounded-full">
                                                 <i data-feather="alert-triangle" class="w-3 h-3 inline mr-1"></i>
                                                 This job is under dispute
                                             </span>
@@ -2989,7 +2969,7 @@ const memberContentTemplates = {
                               .map(
                                   (user, index) => `
                     <div class="p-6 flex items-center justify-between ${
-                        user.id === userData.id ? "bg-blue-50" : ""
+                        user.id === userData.id ? "bg-chip-lavender" : ""
                     }">
                         <div class="flex items-center">
                             <span class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center font-bold text-sm mr-4">${
@@ -3028,22 +3008,22 @@ const memberContentTemplates = {
     wallet: (userData) => `
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900 flex items-center">
-                <i class="fas fa-wallet mr-3 text-blue-600"></i> My Wallet
+                <i class="fas fa-wallet mr-3 text-ink"></i> My Wallet
             </h1>
             <p class="text-gray-600 mt-2">Manage your funds and transactions</p>
         </div>
         
         <div class="wallet-summary bg-white rounded-lg shadow-lg p-6 mb-6">
             <div class="wallet-balance text-center mb-6">
-                <div class="balance-amount text-4xl font-bold text-green-600 mb-2" id="wallet-balance">₦0.00</div>
+                <div class="balance-amount text-4xl font-bold text-mint mb-2" id="wallet-balance">₦0.00</div>
                 <div class="balance-points text-lg text-gray-600" id="wallet-points">0.00 pts</div>
             </div>
             
             <div class="wallet-actions flex gap-4 justify-center flex-wrap">
-                <button id="add-funds-btn" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                <button id="add-funds-btn" class="dashboard-action dashboard-action-primary px-6 py-3 rounded-lg transition-colors flex items-center">
                     <i class="fas fa-plus mr-2"></i> Add Funds
                 </button>
-                <button id="withdraw-funds-btn" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                <button id="withdraw-funds-btn" class="dashboard-action dashboard-action-mint px-6 py-3 rounded-lg transition-colors flex items-center">
                     <i class="fas fa-money-bill-wave mr-2"></i> Withdraw
                 </button>
                 <button id="view-transactions-btn" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors flex items-center">
@@ -3069,12 +3049,12 @@ const memberContentTemplates = {
         </div>
         
         <!-- Auto-Response Message (Hidden Initially) -->
-        <div id="contact-auto-response" class="hidden bg-green-50 border-l-4 border-green-500 p-6 rounded-lg mb-8">
+        <div id="contact-auto-response" class="hidden alert-box alert-box-mint p-6 rounded-lg mb-8">
             <div class="flex items-start">
-                <i data-feather="check-circle" class="w-6 h-6 text-green-500 mr-3 flex-shrink-0"></i>
+                <i data-feather="check-circle" class="w-6 h-6 text-mint mr-3 flex-shrink-0"></i>
                 <div>
-                    <h3 class="font-semibold text-green-800 mb-2">Thank you for contacting Craftnet.</h3>
-                    <p class="text-green-700">
+                    <h3 class="font-semibold text-mint mb-2">Thank you for contacting Craftnet.</h3>
+                    <p class="text-mint">
                         We have received your request and will review it within 72 hours.<br>
                         You will be notified once there is an update.
                     </p>
@@ -3096,7 +3076,7 @@ const memberContentTemplates = {
                         name="full-name"
                         required
                         value="${userData.name || ''}"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus-theme text-base"
                         placeholder="Enter your full name"
                     />
                     <div id="dashboard-full-name-error" class="form-error hidden text-red-600 text-sm mt-1"></div>
@@ -3113,7 +3093,7 @@ const memberContentTemplates = {
                         name="email"
                         required
                         value="${userData.email || ''}"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus-theme text-base"
                         placeholder="your.email@example.com"
                     />
                     <div id="dashboard-email-error" class="form-error hidden text-red-600 text-sm mt-1"></div>
@@ -3128,7 +3108,7 @@ const memberContentTemplates = {
                         type="tel"
                         id="dashboard-phone"
                         name="phone"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus-theme text-base"
                         placeholder="+234 800 000 0000"
                     />
                     <div id="dashboard-phone-error" class="form-error hidden text-red-600 text-sm mt-1"></div>
@@ -3143,7 +3123,7 @@ const memberContentTemplates = {
                         id="dashboard-issue-category"
                         name="issue-category"
                         required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus-theme text-base"
                     >
                         <option value="">Select a category</option>
                         <option value="Payment Issue">Payment Issue</option>
@@ -3166,7 +3146,7 @@ const memberContentTemplates = {
                         id="dashboard-subject"
                         name="subject"
                         required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus-theme text-base"
                         placeholder="Brief description of your issue"
                     />
                     <div id="dashboard-subject-error" class="form-error hidden text-red-600 text-sm mt-1"></div>
@@ -3183,7 +3163,7 @@ const memberContentTemplates = {
                         required
                         rows="6"
                         minlength="10"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base resize-y"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus-theme text-base resize-y"
                         placeholder="Please provide details about your issue (minimum 10 characters)"
                     ></textarea>
                     <div id="dashboard-message-error" class="form-error hidden text-red-600 text-sm mt-1"></div>
@@ -3202,7 +3182,7 @@ const memberContentTemplates = {
                         id="dashboard-attachment"
                         name="attachment"
                         accept="image/*,.pdf"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus-theme text-base file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file-theme-peach"
                     />
                     <div id="dashboard-attachment-error" class="form-error hidden text-red-600 text-sm mt-1"></div>
                     <div class="text-sm text-gray-500 mt-1">
@@ -3215,7 +3195,7 @@ const memberContentTemplates = {
                 <button
                     type="submit"
                     id="dashboard-submit-btn"
-                    class="w-full bg-blue-600 text-white px-6 py-4 rounded-lg font-semibold text-base shadow-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px] flex items-center justify-center"
+                    class="w-full dashboard-action dashboard-action-primary px-6 py-4 rounded-lg font-semibold text-base shadow-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px] flex items-center justify-center"
                 >
                     <span id="dashboard-submit-text">Submit Request</span>
                     <span id="dashboard-submit-spinner" class="hidden ml-2">
@@ -3224,7 +3204,7 @@ const memberContentTemplates = {
                 </button>
 
                 <!-- Error Message -->
-                <div id="dashboard-form-error" class="hidden mt-4 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                <div id="dashboard-form-error" class="hidden mt-4 alert-box alert-box-pink p-4 rounded-lg">
                     <div class="flex items-start">
                         <i data-feather="alert-circle" class="w-5 h-5 text-red-500 mr-3 flex-shrink-0"></i>
                         <p id="dashboard-form-error-text" class="text-red-700 text-sm"></p>
@@ -3236,7 +3216,7 @@ const memberContentTemplates = {
         <!-- Help Center Link -->
         <div class="mt-8 text-center">
             <p class="text-gray-600 mb-4">Looking for quick answers?</p>
-            <a href="help-center.html" class="text-blue-600 hover:text-blue-800 underline">
+            <a href="help-center.html" class="text-ink hover:text-navy underline">
                 Visit our Help Center
             </a>
         </div>
@@ -3558,36 +3538,6 @@ function attachDynamicEventListeners(tabId, userData) {
                 searchBtn.innerHTML = `<i data-feather="search" class="w-4 h-4 mr-2"></i>Search`;
                 feather.replace();
             }
-        }
-    }
-
-    // Settings-specific listeners
-    if (tabId === "settings") {
-        const testStorageBtn = document.getElementById("test-storage-btn");
-        if (testStorageBtn) {
-            testStorageBtn.addEventListener("click", async () => {
-                testStorageBtn.disabled = true;
-                testStorageBtn.textContent = "Testing...";
-
-                const success = await testStorageConfiguration();
-
-                if (success) {
-                    showNotification(
-                        "Storage test completed successfully! Check console for details.",
-                        "success"
-                    );
-                } else {
-                    showNotification(
-                        "Storage test failed. Check console for details.",
-                        "error"
-                    );
-                }
-
-                testStorageBtn.disabled = false;
-                testStorageBtn.innerHTML =
-                    '<i data-feather="database" class="w-4 h-4 inline mr-2"></i>Test Storage Configuration';
-                feather.replace();
-            });
         }
     }
 
@@ -4003,12 +3953,12 @@ document.addEventListener("click", async (e) => {
         e.preventDefault();
         const jobCard = e.target.closest(".border");
         const jobTitle = jobCard.querySelector("h4").textContent;
-        const jobAmount = jobCard.querySelector(".bg-green-100").textContent;
+        const jobAmount = jobCard.querySelector(".status-badge-mint").textContent;
 
         if (confirm(`Apply for "${jobTitle}" (${jobAmount})?`)) {
             e.target.textContent = "Applied";
-            e.target.classList.remove("bg-blue-600", "hover:bg-blue-700");
-            e.target.classList.add("bg-green-600", "cursor-not-allowed");
+            e.target.classList.remove("dashboard-action-primary");
+            e.target.classList.add("dashboard-action-mint", "cursor-not-allowed");
             e.target.disabled = true;
 
             // Show success notification
@@ -4031,7 +3981,7 @@ document.addEventListener("click", async (e) => {
             // Simulate processing
             setTimeout(() => {
                 e.target.textContent = "Withdrawal Successful";
-                e.target.classList.remove("bg-green-600", "hover:bg-green-700");
+                e.target.classList.remove("dashboard-action-mint");
                 e.target.classList.add("bg-gray-400");
                 showNotification(
                     "Withdrawal processed successfully! Funds will be available in 2-3 business days.",
@@ -4051,7 +4001,7 @@ document.addEventListener("click", async (e) => {
         const eventCard = e.target.closest(".border");
         const eventTitle = eventCard.querySelector("h4").textContent;
         const eventType = eventCard.querySelector(
-            ".bg-blue-100, .bg-green-100, .bg-purple-100"
+            ".status-badge-lavender, .status-badge-mint"
         ).textContent;
 
         if (
@@ -4060,8 +4010,8 @@ document.addEventListener("click", async (e) => {
         ) {
             if (confirm(`Register for "${eventTitle}" for ₦37,500?`)) {
                 e.target.textContent = "Registered";
-                e.target.classList.remove("bg-green-600", "hover:bg-green-700");
-                e.target.classList.add("bg-blue-600", "cursor-not-allowed");
+                e.target.classList.remove("dashboard-action-mint");
+                e.target.classList.add("dashboard-action-primary", "cursor-not-allowed");
                 e.target.disabled = true;
                 showNotification(
                     `Successfully registered for ${eventTitle}!`,
@@ -4071,12 +4021,10 @@ document.addEventListener("click", async (e) => {
         } else {
             e.target.textContent = "Registered";
             e.target.classList.remove(
-                "bg-blue-600",
-                "hover:bg-blue-700",
-                "bg-purple-600",
-                "hover:bg-purple-700"
+                "dashboard-action-primary",
+                "dashboard-action-lavender"
             );
-            e.target.classList.add("bg-green-600", "cursor-not-allowed");
+            e.target.classList.add("dashboard-action-mint", "cursor-not-allowed");
             e.target.disabled = true;
             showNotification(
                 `Successfully registered for ${eventTitle}!`,
@@ -4094,7 +4042,7 @@ document.addEventListener("click", async (e) => {
         const courseCard = e.target.closest(".border");
         const courseTitle = courseCard.querySelector("h4").textContent;
         const coursePrice =
-            courseCard.querySelector(".text-green-600").textContent;
+            courseCard.querySelector(".text-mint").textContent;
 
         if (
             coursePrice === "₦73,500" &&
@@ -4102,8 +4050,8 @@ document.addEventListener("click", async (e) => {
         ) {
             if (confirm(`Enroll in "${courseTitle}" for ₦73,500?`)) {
                 e.target.textContent = "Enrolled";
-                e.target.classList.remove("bg-green-600", "hover:bg-green-700");
-                e.target.classList.add("bg-blue-600", "cursor-not-allowed");
+                e.target.classList.remove("dashboard-action-mint");
+                e.target.classList.add("dashboard-action-primary", "cursor-not-allowed");
                 e.target.disabled = true;
                 showNotification(
                     `Successfully enrolled in ${courseTitle}!`,
@@ -4112,8 +4060,8 @@ document.addEventListener("click", async (e) => {
             }
         } else {
             e.target.textContent = "Enrolled";
-            e.target.classList.remove("bg-blue-600", "hover:bg-blue-700");
-            e.target.classList.add("bg-green-600", "cursor-not-allowed");
+            e.target.classList.remove("dashboard-action-primary");
+            e.target.classList.add("dashboard-action-mint", "cursor-not-allowed");
             e.target.disabled = true;
             showNotification(
                 `Successfully enrolled in ${courseTitle}!`,
@@ -4129,19 +4077,19 @@ document.addEventListener("click", async (e) => {
         const clientName = requestCard
             .querySelector("h4")
             .textContent.replace("Request from ", "");
-        const budget = requestCard.querySelector(".text-green-600").textContent;
+        const budget = requestCard.querySelector(".text-mint").textContent;
 
         if (confirm(`Accept job request from ${clientName} (${budget})?`)) {
             e.target.textContent = "Accepted";
-            e.target.classList.remove("bg-green-600", "hover:bg-green-700");
-            e.target.classList.add("bg-blue-600", "cursor-not-allowed");
+            e.target.classList.remove("dashboard-action-mint");
+            e.target.classList.add("dashboard-action-primary", "cursor-not-allowed");
             e.target.disabled = true;
 
             // Update status badge
-            const statusBadge = requestCard.querySelector(".bg-orange-100");
+            const statusBadge = requestCard.querySelector(".status-badge-peach");
             statusBadge.textContent = "Accepted";
-            statusBadge.classList.remove("bg-orange-100", "text-orange-800");
-            statusBadge.classList.add("bg-green-100", "text-green-800");
+            statusBadge.classList.remove("status-badge-peach");
+            statusBadge.classList.add("status-badge-mint");
 
             showNotification(
                 `Job request accepted! You can now communicate with ${clientName}.`,
@@ -4586,19 +4534,19 @@ async function displaySearchResults(results, currentUserRole) {
                             ${
                                 isMemberViewingApprentices && user.role === "apprentice"
                                     ? `
-                            <button class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 view-profile-btn"
+                            <button class="flex-1 dashboard-action dashboard-action-primary py-2 rounded-lg view-profile-btn"
                                     data-user-id="${user.id}"
                                     data-user-name="${(user.name || user.email || "User").replace(/"/g, "&quot;")}">
                                 View
                             </button>
-                            <button class="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 personal-hire-btn"
+                            <button class="flex-1 dashboard-action dashboard-action-mint py-2 rounded-lg personal-hire-btn"
                                     data-user-id="${user.id}"
                                     data-user-name="${(user.name || user.email || "Apprentice").replace(/"/g, "&quot;")}">
                                 Personal Hire
                             </button>
                             `
                                     : `
-                            <button class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 ${
+                            <button class="flex-1 dashboard-action dashboard-action-primary py-2 rounded-lg ${
                                 user.role === "apprentice" ? "more-btn" : "follow-btn"
                             }"
                                     data-user-id="${user.id}"
@@ -4699,7 +4647,7 @@ async function loadTrendingCreators(userData) {
                                     : ""
                             }
                         </div>
-                        <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 ${primaryBtnClass} text-sm" 
+                        <button class="px-4 py-2 dashboard-action dashboard-action-primary rounded-lg ${primaryBtnClass} text-sm" 
                                 data-user-id="${user.id}"
                                 data-user-name="${(user.name || user.email || "User").replace(/"/g, "&quot;")}">
                             ${primaryBtnText}
@@ -5223,7 +5171,7 @@ function renderNotificationList() {
             const isUnread = !notification.is_read;
             return `
                 <div class="px-4 py-3 ${
-                    isUnread ? "bg-blue-50" : "bg-white"
+                    isUnread ? "bg-chip-lavender" : "bg-white"
                 }">
                     <div class="flex items-start justify-between gap-3">
                         <div>
@@ -5239,7 +5187,7 @@ function renderNotificationList() {
                         </div>
                         ${
                             isUnread
-                                ? `<button class="text-xs text-blue-600 hover:underline mark-read-btn" data-notification-id="${notification.id}">Mark read</button>`
+                                ? `<button class="text-xs text-ink hover:underline mark-read-btn" data-notification-id="${notification.id}">Mark read</button>`
                                 : ""
                         }
                     </div>
@@ -5382,25 +5330,25 @@ function showNotification(message, type = "info") {
 
     // Set border color based on type
     const borderColors = {
-        success: "border-green-500",
+        success: "border-mint-strong",
         error: "border-red-500",
-        warning: "border-yellow-500",
-        info: "border-blue-500",
+        warning: "border-peach-strong",
+        info: "border-lavender-strong",
     };
     notification.classList.add(borderColors[type] || borderColors.info);
 
     // Set icon and text color based on type
     const iconColors = {
-        success: "text-green-500",
+        success: "text-mint",
         error: "text-red-500",
-        warning: "text-yellow-500",
-        info: "text-blue-500",
+        warning: "text-peach",
+        info: "text-lavender",
     };
     const textColors = {
-        success: "text-green-700",
+        success: "text-mint",
         error: "text-red-700",
-        warning: "text-yellow-700",
-        info: "text-blue-700",
+        warning: "text-peach",
+        info: "text-navy",
     };
 
     const icons = {
@@ -5421,7 +5369,7 @@ function showNotification(message, type = "info") {
                 <p class="text-sm font-medium ${
                     textColors[type] || textColors.info
                 }">${message}</p>
-                <a href="contact-form.html" class="text-xs text-blue-600 hover:text-blue-800 underline mt-1 block">
+                <a href="contact-form.html" class="text-xs text-ink hover:text-navy underline mt-1 block">
                     For any issues, contact us
                 </a>
             </div>
@@ -5813,7 +5761,6 @@ async function renderDashboard(user, userData) {
             if (typeof renderNavigation === "function") {
                 renderNavigation(apprenticeTabs);
             }
-            createDashboardMobileNav(userData, apprenticeTabs, "free");
             await switchContent("home", userData);
         } else {
             // Default to member
@@ -5833,7 +5780,6 @@ async function renderDashboard(user, userData) {
             if (typeof renderNavigation === "function") {
                 renderNavigation(memberTabs, effectivePlanKey);
             }
-            createDashboardMobileNav(userData, memberTabs, effectivePlanKey);
             await switchContent("home", userData);
         }
 
@@ -5903,7 +5849,7 @@ async function renderDashboard(user, userData) {
                 <div class="text-center py-12">
                     <p class="text-red-500 mb-4">Error loading dashboard: ${error.message || "Unknown error"}</p>
                     <p class="text-gray-500 text-sm mb-4">Check browser console for details</p>
-                    <button onclick="location.reload()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                    <button onclick="location.reload()" class="dashboard-action dashboard-action-primary px-4 py-2 rounded-lg">
                         Refresh Page
                     </button>
                 </div>
@@ -5914,7 +5860,7 @@ async function renderDashboard(user, userData) {
                 <div class="min-h-screen bg-gray-100 p-8">
                     <div class="text-center py-12">
                         <p class="text-red-500 mb-4">Error loading dashboard: ${error.message || "Unknown error"}</p>
-                        <button onclick="location.reload()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        <button onclick="location.reload()" class="dashboard-action dashboard-action-primary px-4 py-2 rounded-lg">
                             Refresh Page
                         </button>
                     </div>
@@ -5954,6 +5900,11 @@ function renderNavigation(tabs, planKey = "free") {
         .join("");
     mainNav.innerHTML = navItems;
 
+    // Keep the theme control outside the role-specific tab state.
+    if (window.darkMode && typeof window.darkMode.ensureDashboardToggle === "function") {
+        window.darkMode.ensureDashboardToggle(mainNav);
+    }
+
     // Set initial active tab
     const firstTab = mainNav.querySelector('[data-tab="home"]');
     if (firstTab) {
@@ -5964,6 +5915,18 @@ function renderNavigation(tabs, planKey = "free") {
     // Replace feather icons in navigation
     if (typeof feather !== "undefined") {
         feather.replace();
+    }
+
+    syncDashboardMobileNav();
+}
+
+function syncDashboardMobileNav() {
+    const mobileNav = document.querySelector("#dashboard-mobile-nav-drawer .dashboard-mobile-nav-menu");
+    if (!mobileNav || !mainNav) return;
+
+    mobileNav.replaceChildren(...Array.from(mainNav.children, (item) => item.cloneNode(true)));
+    if (typeof feather !== "undefined") {
+        feather.replace({}, mobileNav);
     }
 }
 
@@ -5977,33 +5940,6 @@ function normalizeDashboardHeaderLayout() {
 
   // IMPORTANT: preserve the desktop tab nav if it exists
   const mainNav = dashboardHeader.querySelector('#main-nav');
-
-  // Find hamburger (support both class names)
-  let hamburger =
-    dashboardHeader.querySelector('.mobile-menu-toggle') ||
-    dashboardHeader.querySelector('.dashboard-mobile-toggle');
-
-  // If hamburger doesn't exist, create it (so we never lose navigation)
-  if (!hamburger) {
-    hamburger = document.createElement('button');
-    hamburger.type = 'button';
-    hamburger.className = 'mobile-menu-toggle dashboard-mobile-toggle';
-    hamburger.id = 'dashboard-mobile-menu-toggle';
-    hamburger.setAttribute('aria-label', 'Open menu');
-    hamburger.innerHTML = '<i data-feather="menu"></i>';
-
-    // Hook it up to your existing drawer logic
-    hamburger.addEventListener('click', () => {
-      const overlay = document.getElementById('dashboard-mobile-nav-overlay');
-      const drawer = document.getElementById('dashboard-mobile-nav-drawer');
-      if (overlay) overlay.classList.add('active');
-      if (drawer) drawer.classList.add('active');
-      document.body.style.overflow = 'hidden';
-    });
-  } else {
-    // Ensure it has BOTH classes so CSS always catches it
-    hamburger.classList.add('mobile-menu-toggle', 'dashboard-mobile-toggle');
-  }
 
   // Find logo (link/img/svg)
   const logoLink = dashboardHeader.querySelector('a[href*="index"], a[href*="home"]');
@@ -6026,7 +5962,23 @@ function normalizeDashboardHeaderLayout() {
   const rightGroup = document.createElement('div');
   rightGroup.className = 'dashboard-right';
 
-  leftGroup.appendChild(hamburger);
+    const mobileMenuButton = document.createElement('button');
+    mobileMenuButton.type = 'button';
+    mobileMenuButton.className = 'dashboard-mobile-menu-toggle';
+    mobileMenuButton.setAttribute('aria-label', 'Open dashboard menu');
+    mobileMenuButton.innerHTML = '<i data-lucide="menu" class="w-5 h-5"></i>';
+    mobileMenuButton.addEventListener('click', () => {
+        const drawer = document.getElementById('dashboard-mobile-nav-drawer');
+        const overlay = document.getElementById('dashboard-mobile-nav-overlay');
+        if (!drawer || !overlay) return;
+        drawer.classList.add('open');
+        overlay.classList.add('open');
+        drawer.setAttribute('aria-hidden', 'false');
+        overlay.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    });
+
+    leftGroup.appendChild(mobileMenuButton);
 
   if (logoLink && (logoLink.querySelector('svg') || logoLink.querySelector('img'))) {
     leftGroup.appendChild(logoLink);
@@ -6055,142 +6007,36 @@ function normalizeDashboardHeaderLayout() {
   dashboardHeader.appendChild(headerRow);
   if (preservedNav) dashboardHeader.appendChild(preservedNav);
 
-  // Re-init feather icons
-  if (typeof feather !== "undefined") feather.replace();
+  // Re-init Lucide icons
+  if (typeof lucide !== "undefined") lucide.createIcons();
+
+    const drawer = document.getElementById('dashboard-mobile-nav-drawer');
+    const overlay = document.getElementById('dashboard-mobile-nav-overlay');
+    const closeButton = drawer?.querySelector('.dashboard-mobile-nav-close');
+    const closeDrawer = () => {
+        drawer?.classList.remove('open');
+        overlay?.classList.remove('open');
+        drawer?.setAttribute('aria-hidden', 'true');
+        overlay?.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    };
+
+    closeButton?.addEventListener('click', closeDrawer);
+    overlay?.addEventListener('click', closeDrawer);
+    drawer?.querySelector('.dashboard-mobile-nav-menu')?.addEventListener('click', (event) => {
+        const drawerButton = event.target.closest('.nav-link');
+        if (!drawerButton || drawerButton.disabled) return;
+        const sourceButton = mainNav?.querySelector(`[data-tab="${drawerButton.dataset.tab}"]`);
+        closeDrawer();
+        sourceButton?.click();
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && drawer?.classList.contains('open')) closeDrawer();
+    });
+    syncDashboardMobileNav();
 
   // after rebuilding header DOM, re-bind notification click
   try { bindNotificationUIHandlers(); } catch (e) {}
-}
-
-function createDashboardMobileNav(userData, tabs, userPlan) {
-    // Check if mobile nav already exists
-    if (document.getElementById('dashboard-mobile-nav-overlay')) {
-        return;
-    }
-
-    const userPlanObj = subscriptionPlans[userPlan];
-
-    // Create overlay
-    const overlay = document.createElement('div');
-    overlay.id = 'dashboard-mobile-nav-overlay';
-    overlay.className = 'mobile-nav-overlay';
-
-    // Create drawer
-    const drawer = document.createElement('div');
-    drawer.id = 'dashboard-mobile-nav-drawer';
-    drawer.className = 'mobile-nav-drawer';
-
-    // Create header
-    const header = document.createElement('div');
-    header.className = 'mobile-nav-header';
-
-    const title = document.createElement('h3');
-    title.className = 'text-lg font-semibold text-gray-800';
-    title.textContent = 'Menu';
-
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'mobile-nav-close';
-    closeBtn.innerHTML = '<i data-feather="x"></i>';
-    closeBtn.setAttribute('aria-label', 'Close menu');
-
-    header.appendChild(title);
-    header.appendChild(closeBtn);
-
-    // Create menu
-    const menu = document.createElement('div');
-    menu.className = 'mobile-nav-menu';
-
-    // Build menu items from tabs
-    tabs.forEach(tab => {
-        // Check unlock logic same as renderNavigation
-        const isUnlocked =
-            tabs === apprenticeTabs ||
-            userPlanObj.unlocks.includes("*") ||
-            userPlanObj.unlocks.includes(tab.id) ||
-            tab.access === "free";
-
-        const item = document.createElement('a');
-        item.className = `mobile-nav-item ${tab.id === currentActiveTab ? 'active' : ''}`;
-        item.href = '#';
-        item.setAttribute('data-tab', tab.id);
-
-        const iconSpan = document.createElement('span');
-        iconSpan.className = 'flex items-center';
-        iconSpan.innerHTML = `
-            <i data-feather="${tab.icon}" class="w-5 h-5 mr-3 flex-shrink-0"></i>
-            <span>${tab.name}</span>
-            ${!isUnlocked ? '<i data-feather="lock" class="w-4 h-4 ml-auto flex-shrink-0"></i>' : ''}
-        `;
-
-        item.appendChild(iconSpan);
-
-        if (!isUnlocked) {
-            item.classList.add('opacity-50', 'cursor-not-allowed');
-            item.style.pointerEvents = 'none';
-        }
-
-        menu.appendChild(item);
-    });
-
-    // Assemble drawer
-    drawer.appendChild(header);
-    drawer.appendChild(menu);
-
-    // Add to document
-    document.body.appendChild(overlay);
-    document.body.appendChild(drawer);
-
-    // Add event listeners
-    const toggleBtn = document.getElementById('dashboard-mobile-menu-toggle');
-
-    function openDrawer() {
-        overlay.classList.add('active');
-        drawer.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeDrawer() {
-        overlay.classList.remove('active');
-        drawer.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-
-    // Toggle button click
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', openDrawer);
-    }
-
-    // Close button click
-    closeBtn.addEventListener('click', closeDrawer);
-
-    // Overlay click
-    overlay.addEventListener('click', closeDrawer);
-
-    // ESC key
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && overlay.classList.contains('active')) {
-            closeDrawer();
-        }
-    });
-
-    // Menu item clicks
-    menu.addEventListener('click', async (e) => {
-        e.preventDefault();
-        const item = e.target.closest('.mobile-nav-item');
-        if (!item || item.classList.contains('opacity-50')) return;
-
-        const tabId = item.getAttribute('data-tab');
-        if (tabId) {
-            // Switch content (this will update both drawer and main nav active states)
-            await switchContent(tabId, userData);
-            closeDrawer();
-        }
-    });
-
-    // Replace feather icons
-    if (typeof feather !== "undefined") {
-        feather.replace();
-    }
 }
 
 async function switchContent(tabId, userData) {
@@ -6205,17 +6051,6 @@ async function switchContent(tabId, userData) {
                 currentActiveTab = tabId;
             }
         });
-
-        // Update mobile nav drawer active state
-        const mobileDrawer = document.getElementById('dashboard-mobile-nav-drawer');
-        if (mobileDrawer) {
-            mobileDrawer.querySelectorAll(".mobile-nav-item").forEach((item) => {
-                item.classList.remove("active");
-                if (item.dataset.tab === tabId) {
-                    item.classList.add("active");
-                }
-            });
-        }
 
         let content = "";
         const templates =
@@ -6257,6 +6092,21 @@ async function switchContent(tabId, userData) {
         ) {
             // Handle async apprentice templates
             try {
+                if (tabId === "earnings") {
+                    mainContent.innerHTML = `
+                        <div class="space-y-6 animate-pulse">
+                            <div class="h-8 w-64 bg-gray-200 rounded"></div>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                ${Array.from({ length: 4 }, () => '<div class="h-32 bg-gray-200 rounded-lg"></div>').join("")}
+                            </div>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <div class="h-64 bg-gray-200 rounded-lg"></div>
+                                <div class="h-64 bg-gray-200 rounded-lg"></div>
+                            </div>
+                            <div class="h-56 bg-gray-200 rounded-lg"></div>
+                        </div>
+                    `;
+                }
                 content = await templates[tabId](userData);
             } catch (error) {
                 console.error(`Error loading ${tabId} content:`, error);
@@ -6399,7 +6249,7 @@ function showSubscriptionPaymentModal(planKey, plan) {
             : plan.unlocks.map(feature => feature.replace("_", " "));
         
         planFeatures.innerHTML = features.map(feature => 
-            `<li class="flex items-center"><i data-feather="check" class="w-4 h-4 text-green-500 mr-2"></i>${feature}</li>`
+            `<li class="flex items-center"><i data-feather="check" class="w-4 h-4 text-mint mr-2"></i>${feature}</li>`
         ).join("");
     }
 
@@ -6432,7 +6282,7 @@ function createSubscriptionPaymentModal() {
             
             <div class="mb-6">
                 <h3 id="subscription-plan-name" class="text-xl font-semibold text-gray-800"></h3>
-                <p id="subscription-plan-price" class="text-3xl font-bold text-blue-600 mb-4"></p>
+                <p id="subscription-plan-price" class="text-3xl font-bold text-ink mb-4"></p>
                 <ul id="subscription-plan-features" class="space-y-2 text-gray-600">
                     <!-- Features will be populated dynamically -->
                 </ul>
@@ -6441,11 +6291,11 @@ function createSubscriptionPaymentModal() {
             <div class="mb-6">
                 <h4 class="text-lg font-semibold text-gray-800 mb-3">Choose Payment Method</h4>
                 <div class="space-y-3">
-                    <button id="pay-with-wallet-btn" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 flex items-center justify-center">
+                    <button id="pay-with-wallet-btn" class="w-full dashboard-action dashboard-action-primary px-4 py-3 rounded-lg flex items-center justify-center">
                         <i data-feather="credit-card" class="w-5 h-5 mr-2"></i>
                         Pay with Wallet Balance
                     </button>
-                    <button id="pay-manually-btn" class="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 flex items-center justify-center">
+                    <button id="pay-manually-btn" class="w-full dashboard-action dashboard-action-mint px-4 py-3 rounded-lg flex items-center justify-center">
                         <i data-feather="bank" class="w-5 h-5 mr-2"></i>
                         Manual Bank Transfer
                     </button>
@@ -6674,7 +6524,7 @@ async function createBankDetailsModal() {
             </div>
             
             <div class="mb-6">
-                <p class="text-gray-600 mb-4">Please transfer <span id="payment-amount" class="font-bold text-blue-600"></span> to the following account:</p>
+                <p class="text-gray-600 mb-4">Please transfer <span id="payment-amount" class="font-bold text-ink"></span> to the following account:</p>
                 
                 <div class="bg-gray-50 p-4 rounded-lg space-y-3">
                     <div>
@@ -6688,7 +6538,7 @@ async function createBankDetailsModal() {
                     <div>
                         <label class="text-sm font-medium text-gray-700">Account Number:</label>
                         <p class="text-lg font-semibold text-gray-900">${bankDetails.account_number}</p>
-                        <button id="copy-account-number" class="text-blue-600 text-sm hover:underline">Copy</button>
+                        <button id="copy-account-number" class="text-ink text-sm hover:underline">Copy</button>
                     </div>
                 </div>
             </div>
@@ -6696,7 +6546,7 @@ async function createBankDetailsModal() {
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Account Details Used to Pay</label>
                 <input type="text" id="account-details" placeholder="Enter your account name and number used for payment" 
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus-theme focus:border-transparent">
                 <p class="text-xs text-gray-500 mt-1">Example: John Doe - 1234567890</p>
             </div>
             
@@ -6714,7 +6564,7 @@ async function createBankDetailsModal() {
                     <div id="file-preview" class="hidden mt-2">
                         <div class="flex items-center justify-between bg-gray-50 p-2 rounded">
                             <div class="flex items-center">
-                                <svg class="h-5 w-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <svg class="h-5 w-5 text-mint mr-2" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
                                 </svg>
                                 <span id="file-name" class="text-sm text-gray-700"></span>
@@ -6730,7 +6580,7 @@ async function createBankDetailsModal() {
             </div>
             
             <div class="flex space-x-3">
-                <button id="submit-payment-proof" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                <button id="submit-payment-proof" class="flex-1 dashboard-action dashboard-action-primary px-4 py-2 rounded-lg">
                     Submit Payment Proof
                 </button>
                 <button id="cancel-bank-payment" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400">
@@ -6921,7 +6771,7 @@ async function initializeDashboard() {
                 <div class="min-h-screen bg-gray-100 p-8">
                     <div class="text-center py-12">
                         <p class="text-red-500 mb-4">Required page elements not found. Please refresh the page.</p>
-                        <button onclick="location.reload()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        <button onclick="location.reload()" class="dashboard-action dashboard-action-primary px-4 py-2 rounded-lg">
                             Refresh Page
                         </button>
                     </div>
@@ -6987,7 +6837,7 @@ async function initializeDashboard() {
             mainContent.innerHTML = `
                 <div class="text-center py-12">
                     <p class="text-red-500 mb-4">Error loading profile: ${error.message}</p>
-                    <button onclick="location.reload()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                    <button onclick="location.reload()" class="dashboard-action dashboard-action-primary px-4 py-2 rounded-lg">
                         Retry
                     </button>
                 </div>
@@ -7031,8 +6881,8 @@ async function initializeDashboard() {
                 await renderDashboard(user, userData);
                 if (mainContent) {
                     mainContent.innerHTML = `
-                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-                            <p class="text-yellow-700">Please complete your profile to access all features.</p>
+                        <div class="alert-box alert-box-peach p-4 mb-4">
+                            <p class="text-peach">Please complete your profile to access all features.</p>
                         </div>
                         ${mainContent.innerHTML}
                     `;
@@ -7098,7 +6948,7 @@ async function initializeDashboard() {
                     <div class="text-center py-12">
                         <p class="text-red-500 mb-4">Error rendering dashboard: ${error.message || "Unknown error"}</p>
                         <p class="text-gray-500 text-sm mb-4">Check browser console for details</p>
-                        <button onclick="location.reload()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        <button onclick="location.reload()" class="dashboard-action dashboard-action-primary px-4 py-2 rounded-lg">
                             Retry
                         </button>
                     </div>
@@ -7144,7 +6994,7 @@ async function initializeDashboard() {
                 <div class="text-center py-12">
                     <p class="text-red-500 mb-4">Error loading dashboard: ${error.message || "Unknown error"}</p>
                     <p class="text-gray-500 text-sm mb-4">Please check the browser console for more details</p>
-                    <button onclick="location.reload()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                    <button onclick="location.reload()" class="dashboard-action dashboard-action-primary px-4 py-2 rounded-lg">
                         Retry
                     </button>
                 </div>
@@ -7156,7 +7006,7 @@ async function initializeDashboard() {
                     <div class="text-center py-12">
                         <h1 class="text-2xl font-bold mb-4">Dashboard Error</h1>
                         <p class="text-red-500 mb-4">Error loading dashboard: ${error.message || "Unknown error"}</p>
-                        <button onclick="location.reload()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        <button onclick="location.reload()" class="dashboard-action dashboard-action-primary px-4 py-2 rounded-lg">
                             Refresh Page
                         </button>
                     </div>
@@ -7235,7 +7085,7 @@ async function showUserProfileModal(userId, userName) {
                     <a href="${trimmedUrl}"
                        target="_blank"
                        rel="noopener noreferrer"
-                       class="inline-flex items-center bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 font-medium text-sm">
+                       class="inline-flex items-center dashboard-action dashboard-action-primary py-2 px-4 rounded-lg font-medium text-sm">
                         <i data-feather="file-text" class="w-4 h-4 mr-2"></i>
                         View CV
                     </a>
@@ -7335,11 +7185,10 @@ async function initializeDashboardOnReady() {
                   if (success) {
                       connectBtn.textContent = "Connected!";
                       connectBtn.classList.remove(
-                          "bg-blue-600",
-                          "hover:bg-blue-700"
+                          "dashboard-action-primary"
                       );
                       connectBtn.classList.add(
-                          "bg-green-600",
+                          "dashboard-action-mint",
                           "cursor-not-allowed"
                       );
                       connectBtn.disabled = true;
@@ -7351,8 +7200,7 @@ async function initializeDashboardOnReady() {
                       if (originalBtn) {
                           originalBtn.textContent = "Following";
                           originalBtn.classList.remove(
-                              "bg-blue-600",
-                              "hover:bg-blue-700"
+                              "dashboard-action-primary"
                           );
                           originalBtn.classList.add(
                               "bg-gray-400",
@@ -7597,7 +7445,7 @@ async function initializeDashboardOnReady() {
         mainContent.innerHTML = `
           <div class="text-center py-12">
             <p class="text-red-500 mb-4">Error: User profile not found</p>
-            <button onclick="location.reload()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+            <button onclick="location.reload()" class="dashboard-action dashboard-action-primary px-4 py-2 rounded-lg">
               Retry
             </button>
           </div>
@@ -7909,65 +7757,6 @@ async function enhanceGalleryDisplayWithUrlTesting() {
     }
 }
 
-// --- Storage Diagnostics ---
-async function testStorageConfiguration() {
-    try {
-        console.log("Testing storage configuration...");
-
-        // Test bucket listing
-        const { data: buckets, error: listError } =
-            await supabase.storage.listBuckets();
-        if (listError) {
-            console.error("❌ Cannot list buckets:", listError);
-            return false;
-        }
-
-        console.log(
-            "✅ Available buckets:",
-            buckets.map((b) => b.name)
-        );
-
-        // Check if posts bucket exists
-        const postsBucket = buckets.find((b) => b.name === "posts");
-        if (!postsBucket) {
-            console.log("⚠️ 'posts' bucket doesn't exist");
-
-            // Try to create it
-            const { error: createError } = await supabase.storage.createBucket(
-                "posts",
-                {
-                    public: true,
-                    allowedMimeTypes: ["image/*"],
-                    fileSizeLimit: 5242880,
-                }
-            );
-
-            if (createError) {
-                console.error("❌ Cannot create posts bucket:", createError);
-                return false;
-            }
-
-            console.log("✅ Created posts bucket successfully");
-        } else {
-            console.log("✅ posts bucket exists");
-        }
-
-        // Test bucket access
-        const bucketAccessible = await checkStorageBucket("posts");
-        if (bucketAccessible) {
-            console.log("✅ posts bucket is accessible");
-        } else {
-            console.error("❌ posts bucket is not accessible");
-            return false;
-        }
-
-        return true;
-    } catch (error) {
-        console.error("❌ Storage test failed:", error);
-        return false;
-    }
-}
-
 // Export functions for testing/debugging
 export {
     renderDashboard,
@@ -7993,36 +7782,18 @@ async function updateApprenticeStats(userData) {
             activeJobs: realStats.activeJobs || 0,
             completedJobs: realStats.completedJobs || 0,
             totalEarned: realStats.totalEarned || 0,
-            // Keep some placeholder values for features not yet implemented
-            availableBalance: Math.floor(Math.random() * 3000000) + 750000, // ₦750,000-₦3,750,000 available
-            thisMonth: Math.floor(Math.random() * 1500000) + 300000, // ₦300,000-₦1,800,000 this month
-            goalProgress: Math.floor(Math.random() * 40) + 60, // 60-100% goal progress
         };
 
-        // Update stats in the UI
-        const statElements = document.querySelectorAll(".stat-card p.text-3xl");
-        if (statElements.length >= 3) {
-            statElements[0].textContent = stats.pendingJobs;
-            statElements[1].textContent = stats.activeJobs;
-            statElements[2].textContent = stats.completedJobs;
-        }
-
-        // Update earnings stats if on earnings page
-        const earningsStats = document.querySelectorAll(
-            ".stat-card p.text-3xl"
-        );
-        if (earningsStats.length >= 4) {
-            earningsStats[0].textContent = `₦${(
-                stats.totalEarned * 1500
-            ).toLocaleString()}`;
-            earningsStats[1].textContent = `₦${(
-                stats.availableBalance * 1500
-            ).toLocaleString()}`;
-            earningsStats[2].textContent = `₦${(
-                stats.thisMonth * 1500
-            ).toLocaleString()}`;
-            earningsStats[3].textContent = `${stats.goalProgress}%`;
-        }
+        // Update stats in the UI using unique IDs (Home page stats)
+        const pendingJobsEl = document.getElementById("stat-pending-jobs");
+        const activeJobsEl = document.getElementById("stat-active-jobs");
+        const completedJobsEl = document.getElementById("stat-completed-jobs");
+        const totalEarnedEl = document.getElementById("stat-total-earned");
+        
+        if (pendingJobsEl) pendingJobsEl.textContent = stats.pendingJobs;
+        if (activeJobsEl) activeJobsEl.textContent = stats.activeJobs;
+        if (completedJobsEl) completedJobsEl.textContent = stats.completedJobs;
+        if (totalEarnedEl) totalEarnedEl.textContent = `₦${Number(stats.totalEarned || 0).toLocaleString()}`;
 
         return stats;
     } catch (error) {
@@ -8033,21 +7804,17 @@ async function updateApprenticeStats(userData) {
             activeJobs: 0,
             completedJobs: 0,
             totalEarned: 0,
-            availableBalance: 0,
-            thisMonth: 0,
-            goalProgress: 0,
         };
     }
 }
 
 // --- Real-time Updates ---
 function startRealTimeUpdates(userData) {
-    // Update stats every 30 seconds to simulate real-time data
+    // Update stats every 30 seconds to refresh real data
     setInterval(async () => {
         if (
             currentActiveTab === "home" ||
-            currentActiveTab === "jobs" ||
-            currentActiveTab === "earnings"
+            currentActiveTab === "jobs"
         ) {
             await updateApprenticeStats(userData);
         }
@@ -8106,7 +7873,7 @@ function showJobApplicationModal(jobId, jobTitle) {
                         name="proposal" 
                         rows="5" 
                         required
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus-theme"
                         placeholder="Tell the client why you're the best fit for this job..."></textarea>
                     <p class="text-xs text-gray-500 mt-1">Describe your approach, experience, and why you're perfect for this job.</p>
                 </div>
@@ -8131,7 +7898,7 @@ function showJobApplicationModal(jobId, jobTitle) {
                         <div id="cv-file-info" class="hidden mt-4">
                             <div class="flex items-center justify-between bg-gray-50 p-3 rounded">
                                 <div class="flex items-center">
-                                    <i data-feather="file" class="w-5 h-5 text-blue-600 mr-2"></i>
+                                    <i data-feather="file" class="w-5 h-5 text-ink mr-2"></i>
                                     <span id="cv-file-name" class="text-sm text-gray-700"></span>
                                 </div>
                                 <button type="button" id="remove-cv" class="text-red-500 hover:text-red-700">
@@ -8152,7 +7919,7 @@ function showJobApplicationModal(jobId, jobTitle) {
                     <button 
                         type="submit" 
                         id="submit-application"
-                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+                        class="px-6 py-2 dashboard-action dashboard-action-primary rounded-lg font-medium">
                         Submit Application
                     </button>
                 </div>
@@ -8448,11 +8215,11 @@ async function openPersonalJobRequestModal(apprenticeId, apprenticeName) {
                     <p class="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple skills</p>
                 </div>
 
-                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div class="alert-box alert-box-peach rounded-lg p-4">
                     <div class="flex">
-                        <i data-feather="alert-circle" class="w-5 h-5 text-yellow-600 mr-2 flex-shrink-0"></i>
+                        <i data-feather="alert-circle" class="w-5 h-5 text-peach mr-2 flex-shrink-0"></i>
                         <div>
-                            <p class="text-sm text-yellow-800">
+                            <p class="text-sm text-peach">
                                 <strong>Important:</strong> This will deduct ₦<span id="personal-escrow-amount">0</span> from your wallet as escrow.
                                 Funds will be held until the job is completed or you cancel the request.
                             </p>
@@ -8470,7 +8237,7 @@ async function openPersonalJobRequestModal(apprenticeId, apprenticeName) {
                     <button
                         type="submit"
                         id="submit-personal-job"
-                        class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium flex items-center">
+                        class="px-6 py-3 dashboard-action dashboard-action-mint rounded-lg font-medium flex items-center">
                         <i data-feather="send" class="w-4 h-4 mr-2"></i>
                         Send Personal Job Request
                     </button>
@@ -8653,12 +8420,12 @@ async function showJobFundingModal(jobData, errorMessage) {
             
             <div class="mb-6">
                 <p class="text-gray-600 mb-4">${errorMessage}</p>
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                    <p class="text-sm text-blue-800 mb-2"><strong>Job Details:</strong></p>
-                    <p class="text-sm text-blue-900"><strong>Title:</strong> ${jobData.title}</p>
-                    <p class="text-sm text-blue-900"><strong>Required Amount:</strong> ₦${escrowAmount.toLocaleString()}</p>
-                    <p class="text-sm text-blue-900"><strong>Current Balance:</strong> ₦${currentBalance.toLocaleString()}</p>
-                    <p class="text-sm text-blue-900"><strong>Shortfall:</strong> ₦${shortfall.toLocaleString()}</p>
+                <div class="alert-box alert-box-lavender rounded-lg p-4 mb-4">
+                    <p class="text-sm text-navy mb-2"><strong>Job Details:</strong></p>
+                    <p class="text-sm text-navy"><strong>Title:</strong> ${jobData.title}</p>
+                    <p class="text-sm text-navy"><strong>Required Amount:</strong> ₦${escrowAmount.toLocaleString()}</p>
+                    <p class="text-sm text-navy"><strong>Current Balance:</strong> ₦${currentBalance.toLocaleString()}</p>
+                    <p class="text-sm text-navy"><strong>Shortfall:</strong> ₦${shortfall.toLocaleString()}</p>
                 </div>
                 <p class="text-sm text-gray-600 mb-4">
                     Fund your wallet via manual bank transfer to pay for this job. After your payment is verified and credited, you can create the job using your wallet balance.
@@ -8672,7 +8439,7 @@ async function showJobFundingModal(jobData, errorMessage) {
                     </label>
                     <input type="number" id="funding-amount" name="amount" 
                            value="${escrowAmount}" min="1000" step="100" required
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus-theme">
                     <p class="text-xs text-gray-500 mt-1">Minimum: ₦1,000</p>
                 </div>
                 
@@ -8681,7 +8448,7 @@ async function showJobFundingModal(jobData, errorMessage) {
                         Account Details Used to Pay
                     </label>
                     <input type="text" id="account-details" name="accountDetails" required
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus-theme"
                            placeholder="Enter your account name and number">
                     <p class="text-xs text-gray-500 mt-1">Example: John Doe - 1234567890</p>
                 </div>
@@ -8692,7 +8459,7 @@ async function showJobFundingModal(jobData, errorMessage) {
                     </label>
                     <input type="file" id="proof-of-payment" name="proofOfPayment" 
                            accept="image/*,.pdf"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus-theme">
                     <p class="text-xs text-gray-500 mt-1">Upload screenshot or receipt for faster verification</p>
                 </div>
                 
@@ -8727,7 +8494,7 @@ async function showJobFundingModal(jobData, errorMessage) {
                         Cancel
                     </button>
                     <button type="submit" id="submit-funding-btn"
-                            class="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-semibold flex items-center justify-center">
+                            class="flex-1 dashboard-action dashboard-action-primary px-4 py-3 rounded-lg font-semibold flex items-center justify-center">
                         <i data-feather="send" class="w-4 h-4 mr-2"></i>
                         Submit Funding Request
                     </button>
@@ -8798,13 +8565,13 @@ async function showPersonalJobFundingModal(jobData, apprenticeName, errorMessage
 
             <div class="mb-6">
                 <p class="text-gray-600 mb-4">${errorMessage}</p>
-                <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                    <p class="text-sm text-green-800 mb-2"><strong>Personal Job Request Details:</strong></p>
-                    <p class="text-sm text-green-900"><strong>Title:</strong> ${jobData.title}</p>
-                    <p class="text-sm text-green-900"><strong>Apprentice:</strong> ${apprenticeName}</p>
-                    <p class="text-sm text-green-900"><strong>Required Amount:</strong> ₦${escrowAmount.toLocaleString()}</p>
-                    <p class="text-sm text-green-900"><strong>Current Balance:</strong> ₦${currentBalance.toLocaleString()}</p>
-                    <p class="text-sm text-green-900"><strong>Shortfall:</strong> ₦${shortfall.toLocaleString()}</p>
+                <div class="alert-box alert-box-mint rounded-lg p-4 mb-4">
+                    <p class="text-sm text-mint mb-2"><strong>Personal Job Request Details:</strong></p>
+                    <p class="text-sm text-mint"><strong>Title:</strong> ${jobData.title}</p>
+                    <p class="text-sm text-mint"><strong>Apprentice:</strong> ${apprenticeName}</p>
+                    <p class="text-sm text-mint"><strong>Required Amount:</strong> ₦${escrowAmount.toLocaleString()}</p>
+                    <p class="text-sm text-mint"><strong>Current Balance:</strong> ₦${currentBalance.toLocaleString()}</p>
+                    <p class="text-sm text-mint"><strong>Shortfall:</strong> ₦${shortfall.toLocaleString()}</p>
                 </div>
                 <p class="text-sm text-gray-600 mb-4">
                     Fund your wallet via manual bank transfer to pay for this personal job request. After your payment is verified and credited, you can retry sending the job request using your wallet balance.
@@ -8861,7 +8628,7 @@ async function showPersonalJobFundingModal(jobData, apprenticeName, errorMessage
                         Cancel
                     </button>
                     <button type="submit" id="submit-personal-funding-btn"
-                            class="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 font-semibold flex items-center justify-center">
+                            class="flex-1 dashboard-action dashboard-action-mint px-4 py-3 rounded-lg font-semibold flex items-center justify-center">
                         <i data-feather="send" class="w-4 h-4 mr-2"></i>
                         Submit Funding Request
                     </button>
@@ -9417,8 +9184,8 @@ async function handleJobReview(jobId) {
                     </div>
                 </div>
                 
-                <div class="mt-4 p-3 bg-blue-50 rounded-lg">
-                    <h5 class="font-medium text-blue-900 mb-2">Assigned Apprentice</h5>
+                <div class="mt-4 p-3 bg-chip-lavender rounded-lg">
+                    <h5 class="font-medium text-navy mb-2">Assigned Apprentice</h5>
                     <div class="flex items-center">
                         <img src="https://placehold.co/40x40/EBF4FF/3B82F6?text=${
                             job.assigned_apprentice?.name?.charAt(0) || "A"
@@ -9428,10 +9195,10 @@ async function handleJobReview(jobId) {
                              }" 
                              class="w-10 h-10 rounded-full mr-3">
                         <div class="flex-1">
-                            <p class="font-medium text-blue-900">${
+                            <p class="font-medium text-navy">${
                                 job.assigned_apprentice?.name || "Anonymous"
                             }</p>
-                            <p class="text-sm text-blue-700">${
+                            <p class="text-sm text-navy">${
                                 job.assigned_apprentice?.skill || "Apprentice"
                             } • ${
             job.assigned_apprentice?.location || "Unknown"
@@ -9724,7 +9491,7 @@ async function loadApprenticeRating(jobId, apprenticeId) {
                     </div>
                     <div class="flex items-center space-x-1">
                         <span class="text-xs text-gray-500">(${ratingDetails.total_ratings} rating${ratingDetails.total_ratings !== 1 ? 's' : ''})</span>
-                        ${ratings5Star > 0 ? `<span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">${ratings5Star} five-star</span>` : ''}
+                        ${ratings5Star > 0 ? `<span class="text-xs status-badge status-badge-peach px-2 py-1 rounded-full">${ratings5Star} five-star</span>` : ''}
                     </div>
                 </div>
             `;
@@ -9821,7 +9588,7 @@ async function loadApprenticeRatingForApplication(appId, apprenticeId) {
                     </div>
                     <div class="flex items-center space-x-1">
                         <span class="text-xs text-gray-400">(${ratingDetails.total_ratings})</span>
-                        ${ratings5Star > 0 ? `<span class="text-xs bg-yellow-100 text-yellow-700 px-1 py-0.5 rounded">${ratings5Star} five-star</span>` : ''}
+                        ${ratings5Star > 0 ? `<span class="text-xs status-badge-peach px-1 py-0.5 rounded">${ratings5Star} five-star</span>` : ''}
                     </div>
                 </div>
             `;
@@ -9926,8 +9693,8 @@ async function openRatingModal(jobId, apprenticeId) {
                 
                 <div class="flex items-center space-x-3">
                     <div class="flex-shrink-0">
-                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span class="text-blue-600 font-semibold text-sm">
+                        <div class="w-10 h-10 bg-chip-lavender rounded-full flex items-center justify-center">
+                            <span class="text-ink font-semibold text-sm">
                                 ${job.assigned_apprentice?.name?.charAt(0) || 'A'}
                             </span>
                         </div>
@@ -10685,7 +10452,7 @@ async function loadProgressUpdates(jobId) {
                     
                     ${update.file_url ? `
                         <div class="mb-3">
-                            <a href="${update.file_url}" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">
+                            <a href="${update.file_url}" target="_blank" class="text-ink hover:text-navy text-sm">
                                 <i data-feather="download" class="w-4 h-4 inline mr-1"></i>
                                 View File
                             </a>
@@ -10694,7 +10461,7 @@ async function loadProgressUpdates(jobId) {
                     
                     ${update.link_url ? `
                         <div class="mb-3">
-                            <a href="${update.link_url}" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">
+                            <a href="${update.link_url}" target="_blank" class="text-ink hover:text-navy text-sm">
                                 <i data-feather="external-link" class="w-4 h-4 inline mr-1"></i>
                                 View Link
                             </a>
@@ -10726,15 +10493,15 @@ async function loadProgressUpdates(jobId) {
                         </span>
                         <div class="flex space-x-2">
                             <span class="px-2 py-1 text-xs rounded-full ${
-                                update.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                update.status === 'approved' ? 'bg-green-100 text-green-800' :
-                                update.status === 'needs_changes' ? 'bg-red-100 text-red-800' :
-                                'bg-blue-100 text-blue-800'
+                                update.status === 'pending' ? 'status-badge status-badge-peach' :
+                                update.status === 'approved' ? 'status-badge status-badge-mint' :
+                                update.status === 'needs_changes' ? 'status-badge status-badge-pink' :
+                                'status-badge status-badge-lavender'
                             }">
                                 ${update.status.replace('_', ' ')}
                             </span>
                             ${update.status === 'pending' ? `
-                                <button class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 feedback-progress-update-btn" 
+                                <button class="dashboard-action dashboard-action-primary px-3 py-1 rounded text-xs feedback-progress-update-btn" 
                                         data-update-id="${update.id}">
                                     Review
                                 </button>
@@ -10792,7 +10559,7 @@ async function loadApprenticeProgressUpdates(jobId) {
                     
                     ${update.file_url ? `
                         <div class="mb-3">
-                            <a href="${update.file_url}" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">
+                            <a href="${update.file_url}" target="_blank" class="text-ink hover:text-navy text-sm">
                                 <i data-feather="download" class="w-4 h-4 inline mr-1"></i>
                                 View File
                             </a>
@@ -10801,7 +10568,7 @@ async function loadApprenticeProgressUpdates(jobId) {
                     
                     ${update.link_url ? `
                         <div class="mb-3">
-                            <a href="${update.link_url}" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">
+                            <a href="${update.link_url}" target="_blank" class="text-ink hover:text-navy text-sm">
                                 <i data-feather="external-link" class="w-4 h-4 inline mr-1"></i>
                                 View Link
                             </a>
@@ -10812,9 +10579,9 @@ async function loadApprenticeProgressUpdates(jobId) {
                         <div class="mt-3 pt-3 border-t border-gray-200">
                             <h6 class="text-sm font-medium text-gray-700 mb-2">Member Feedback:</h6>
                             ${update.feedback.map(fb => `
-                                <div class="bg-blue-50 rounded p-3 mb-2">
+                                <div class="bg-chip-lavender rounded p-3 mb-2">
                                     <div class="flex justify-between items-start mb-1">
-                                        <span class="text-xs font-medium text-blue-600">
+                                        <span class="text-xs font-medium text-ink">
                                             ${fb.member ? fb.member.name : 'Member'} - ${fb.feedback_type.replace('_', ' ')}
                                         </span>
                                         <span class="text-xs text-gray-500">
@@ -10833,10 +10600,10 @@ async function loadApprenticeProgressUpdates(jobId) {
                         </span>
                         <div class="flex space-x-2">
                             <span class="px-2 py-1 text-xs rounded-full ${
-                                update.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                update.status === 'approved' ? 'bg-green-100 text-green-800' :
-                                update.status === 'needs_changes' ? 'bg-red-100 text-red-800' :
-                                'bg-blue-100 text-blue-800'
+                                update.status === 'pending' ? 'status-badge status-badge-peach' :
+                                update.status === 'approved' ? 'status-badge status-badge-mint' :
+                                update.status === 'needs_changes' ? 'status-badge status-badge-pink' :
+                                'status-badge status-badge-lavender'
                             }">
                                 ${update.status.replace('_', ' ')}
                             </span>
@@ -11000,7 +10767,7 @@ function renderSubmissionDetails(submission, container, jobType = 'normal') {
                                 const fileName = submission.file_names && submission.file_names[index]
                                     ? submission.file_names[index]
                                     : fileUrl.split('/').pop();
-                                files.push(`<a href="${fullUrl}" target="_blank" download class="text-blue-600 hover:text-blue-800 block mb-1">
+                                files.push(`<a href="${fullUrl}" target="_blank" download class="text-ink hover:text-navy block mb-1">
                                     <i data-feather="download" class="w-4 h-4 inline mr-2"></i>
                                     Download ${fileName}
                                 </a>`);
@@ -11010,7 +10777,7 @@ function renderSubmissionDetails(submission, container, jobType = 'normal') {
                         if (submission.file_url && !submission.file_urls) {
                             const fullUrl = submission.file_url.startsWith('http') ? submission.file_url : getFileUrl(bucket, submission.file_url);
                             const fileName = submission.file_name || submission.file_url.split('/').pop();
-                            files.push(`<a href="${fullUrl}" target="_blank" download class="text-blue-600 hover:text-blue-800 block mb-1">
+                            files.push(`<a href="${fullUrl}" target="_blank" download class="text-ink hover:text-navy block mb-1">
                                 <i data-feather="download" class="w-4 h-4 inline mr-2"></i>
                                 Download ${fileName}
                             </a>`);
@@ -11024,7 +10791,7 @@ function renderSubmissionDetails(submission, container, jobType = 'normal') {
                 <div class="mb-4">
                     <h5 class="font-medium text-gray-700 mb-2">Project Links:</h5>
                     ${submission.links.map(link => `
-                        <a href="${link}" target="_blank" class="text-blue-600 hover:text-blue-800 block mb-1">
+                        <a href="${link}" target="_blank" class="text-ink hover:text-navy block mb-1">
                             <i data-feather="external-link" class="w-4 h-4 inline mr-2"></i>
                             ${link}
                         </a>
@@ -11055,7 +10822,7 @@ function renderFinalSubmissionFile(container, publicUrl, filePath) {
       </video>`;
     } else {
         container.innerHTML = `
-      <a href="${publicUrl}" target="_blank" class="text-blue-600 underline">
+      <a href="${publicUrl}" target="_blank" class="text-ink underline">
         Download submitted file
       </a>`;
     }
@@ -11210,7 +10977,7 @@ async function showFinalSubmissionDetails(submissionId) {
             linksContainer.innerHTML = submission.links.map(link => `
                 <div class="flex items-center bg-white p-3 rounded border">
                     <i data-feather="external-link" class="w-4 h-4 text-gray-500 mr-3"></i>
-                    <a href="${link}" target="_blank" class="text-blue-600 hover:text-blue-800 break-all">
+                    <a href="${link}" target="_blank" class="text-ink hover:text-navy break-all">
                         ${link}
                     </a>
                 </div>
@@ -11291,9 +11058,9 @@ async function loadFinalSubmissions(jobId) {
                     <div class="flex justify-between items-start mb-2">
                         <h6 class="font-semibold text-gray-900">${submission.title}</h6>
                         <span class="px-2 py-1 text-xs rounded-full ${
-                            submission.status === 'pending_review' ? 'bg-yellow-100 text-yellow-800' :
-                            submission.status === 'approved' ? 'bg-green-100 text-green-800' :
-                            submission.status === 'needs_revision' ? 'bg-red-100 text-red-800' :
+                            submission.status === 'pending_review' ? 'status-badge status-badge-peach' :
+                            submission.status === 'approved' ? 'status-badge status-badge-mint' :
+                            submission.status === 'needs_revision' ? 'status-badge status-badge-pink' :
                             'bg-gray-100 text-gray-800'
                         }">
                             ${submission.status.replace('_', ' ')}
@@ -11305,7 +11072,7 @@ async function loadFinalSubmissions(jobId) {
                         <div class="mb-3">
                             <h6 class="text-sm font-medium text-gray-700 mb-2">Files:</h6>
                             ${submission.file_urls.map(fileUrl => `
-                                <a href="${fileUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm block mb-1">
+                                <a href="${fileUrl}" target="_blank" class="text-ink hover:text-navy text-sm block mb-1">
                                     <i data-feather="download" class="w-4 h-4 inline mr-1"></i>
                                     ${fileUrl.split('/').pop()}
                                 </a>
@@ -11317,7 +11084,7 @@ async function loadFinalSubmissions(jobId) {
                         <div class="mb-3">
                             <h6 class="text-sm font-medium text-gray-700 mb-2">Links:</h6>
                             ${submission.links.map(link => `
-                                <a href="${link}" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm block mb-1">
+                                <a href="${link}" target="_blank" class="text-ink hover:text-navy text-sm block mb-1">
                                     <i data-feather="external-link" class="w-4 h-4 inline mr-1"></i>
                                     ${link}
                                 </a>
@@ -11331,7 +11098,7 @@ async function loadFinalSubmissions(jobId) {
                         </span>
                         <div class="flex space-x-2">
                             ${submission.status === 'pending_review' ? `
-                                <button class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 review-final-submission-btn" 
+                                <button class="dashboard-action dashboard-action-primary px-3 py-1 rounded text-xs review-final-submission-btn" 
                                         data-submission-id="${submission.id}">
                                     Review
                                 </button>
@@ -11419,7 +11186,7 @@ async function handleFinalSubmissionReview(submissionId) {
                                         const fileName = submission.file_names && submission.file_names[index]
                                             ? submission.file_names[index]
                                             : fileUrl.split('/').pop();
-                                        files.push(`<a href="${fullUrl}" target="_blank" download class="text-blue-600 hover:text-blue-800 block mb-1">
+                                        files.push(`<a href="${fullUrl}" target="_blank" download class="text-ink hover:text-navy block mb-1">
                                             <i data-feather="download" class="w-4 h-4 inline mr-2"></i>
                                             Download ${fileName}
                                         </a>`);
@@ -11429,7 +11196,7 @@ async function handleFinalSubmissionReview(submissionId) {
                                 if (submission.file_url && !submission.file_urls) {
                                     const fullUrl = submission.file_url.startsWith('http') ? submission.file_url : getFileUrl(FINAL_SUBMISSION_BUCKET, submission.file_url);
                                     const fileName = submission.file_name || submission.file_url.split('/').pop();
-                                    files.push(`<a href="${fullUrl}" target="_blank" download class="text-blue-600 hover:text-blue-800 block mb-1">
+                                    files.push(`<a href="${fullUrl}" target="_blank" download class="text-ink hover:text-navy block mb-1">
                                         <i data-feather="download" class="w-4 h-4 inline mr-2"></i>
                                         Download ${fileName}
                                     </a>`);
@@ -11443,7 +11210,7 @@ async function handleFinalSubmissionReview(submissionId) {
                         <div class="mb-4">
                             <h5 class="font-medium text-gray-700 mb-2">Project Links:</h5>
                             ${submission.links.map(link => `
-                                <a href="${link}" target="_blank" class="text-blue-600 hover:text-blue-800 block mb-1">
+                                <a href="${link}" target="_blank" class="text-ink hover:text-navy block mb-1">
                                     <i data-feather="external-link" class="w-4 h-4 inline mr-2"></i>
                                     ${link}
                                 </a>
@@ -11455,7 +11222,7 @@ async function handleFinalSubmissionReview(submissionId) {
                         <div class="mb-4">
                             <h5 class="font-medium text-gray-700 mb-2">Project Links:</h5>
                             ${submission.links.map(link => `
-                                <a href="${link}" target="_blank" class="text-blue-600 hover:text-blue-800 block mb-1">
+                                <a href="${link}" target="_blank" class="text-ink hover:text-navy block mb-1">
                                     <i data-feather="external-link" class="w-4 h-4 inline mr-2"></i>
                                     ${link}
                                 </a>
@@ -11676,7 +11443,7 @@ function showProfileSetupModal(userData) {
             mainContent.innerHTML = `
                 <div class="text-center py-12">
                     <p class="text-red-500 mb-4">Profile setup modal not found. Please refresh the page.</p>
-                    <button onclick="location.reload()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                    <button onclick="location.reload()" class="dashboard-action dashboard-action-primary px-4 py-2 rounded-lg">
                         Refresh
                     </button>
                 </div>
@@ -12141,10 +11908,10 @@ function loadSubSkills(category, selected = []) {
         const isSelected = selected.includes(skill);
         const button = document.createElement("button");
         button.type = "button";
-        button.className = `px-3 py-1 rounded-full text-sm ${isSelected ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`;
+        button.className = `px-3 py-1 rounded-full text-sm ${isSelected ? "bg-ink text-cream" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`;
         button.textContent = skill;
         button.addEventListener("click", () => {
-            button.classList.toggle("bg-blue-600");
+            button.classList.toggle("bg-ink");
             button.classList.toggle("text-white");
             button.classList.toggle("bg-gray-200");
             button.classList.toggle("text-gray-700");
@@ -12154,7 +11921,7 @@ function loadSubSkills(category, selected = []) {
     });
     
     function updateSubSkillsSelected() {
-        const selected = Array.from(container.querySelectorAll(".bg-blue-600"))
+        const selected = Array.from(container.querySelectorAll(".bg-ink"))
             .map(btn => btn.textContent);
         hiddenInput.value = selected.join(",");
     }
@@ -12186,10 +11953,10 @@ function loadServices(industry, selected = []) {
         const isSelected = selected.includes(service);
         const button = document.createElement("button");
         button.type = "button";
-        button.className = `px-3 py-1 rounded-full text-sm ${isSelected ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`;
+        button.className = `px-3 py-1 rounded-full text-sm ${isSelected ? "bg-ink text-cream" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`;
         button.textContent = service;
         button.addEventListener("click", () => {
-            button.classList.toggle("bg-blue-600");
+            button.classList.toggle("bg-ink");
             button.classList.toggle("text-white");
             button.classList.toggle("bg-gray-200");
             button.classList.toggle("text-gray-700");
@@ -12199,7 +11966,7 @@ function loadServices(industry, selected = []) {
     });
     
     function updateServicesSelected() {
-        const selected = Array.from(container.querySelectorAll(".bg-blue-600"))
+        const selected = Array.from(container.querySelectorAll(".bg-ink"))
             .map(btn => btn.textContent);
         hiddenInput.value = selected.join(",");
     }
@@ -12220,10 +11987,10 @@ function loadProjectCategories(selected = []) {
         const isSelected = selected.includes(category);
         const button = document.createElement("button");
         button.type = "button";
-        button.className = `px-3 py-1 rounded-full text-sm ${isSelected ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`;
+        button.className = `px-3 py-1 rounded-full text-sm ${isSelected ? "bg-ink text-cream" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`;
         button.textContent = category;
         button.addEventListener("click", () => {
-            button.classList.toggle("bg-blue-600");
+            button.classList.toggle("bg-ink");
             button.classList.toggle("text-white");
             button.classList.toggle("bg-gray-200");
             button.classList.toggle("text-gray-700");
@@ -12233,7 +12000,7 @@ function loadProjectCategories(selected = []) {
     });
     
     function updateCategoriesSelected() {
-        const selected = Array.from(container.querySelectorAll(".bg-blue-600"))
+        const selected = Array.from(container.querySelectorAll(".bg-ink"))
             .map(btn => btn.textContent);
         hiddenInput.value = selected.join(",");
     }
@@ -12248,7 +12015,7 @@ function addPortfolioLinkInput(value = "") {
     const div = document.createElement("div");
     div.className = "flex gap-2 mb-2";
     div.innerHTML = `
-        <input type="url" placeholder="https://example.com/portfolio" value="${value}" class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500">
+        <input type="url" placeholder="https://example.com/portfolio" value="${value}" class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus-theme">
         <button type="button" class="remove-portfolio-link text-red-600 hover:text-red-800 px-3">Remove</button>
     `;
     div.querySelector(".remove-portfolio-link").addEventListener("click", () => div.remove());
@@ -12260,7 +12027,7 @@ function addWebsiteLinkInput(value = "") {
     const div = document.createElement("div");
     div.className = "flex gap-2 mb-2";
     div.innerHTML = `
-        <input type="url" placeholder="https://example.com" value="${value}" class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500">
+        <input type="url" placeholder="https://example.com" value="${value}" class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus-theme">
         <button type="button" class="remove-website-link text-red-600 hover:text-red-800 px-3">Remove</button>
     `;
     div.querySelector(".remove-website-link").addEventListener("click", () => div.remove());
@@ -12280,7 +12047,7 @@ function renderApprenticeProfilePage(profile) {
     return `
         <div class="bg-white rounded-lg shadow-lg overflow-hidden">
             <!-- Header Section -->
-            <div class="bg-gradient-to-r from-blue-600 to-blue-800 p-8 text-white">
+            <div class="gradient-ink p-8 text-white">
                 <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
                     <img 
                         src="${profile.avatar_url || `https://placehold.co/150x150/EBF4FF/3B82F6?text=${(profile.name || 'U').charAt(0).toUpperCase()}`}" 
@@ -12289,8 +12056,8 @@ function renderApprenticeProfilePage(profile) {
                     >
                     <div class="flex-1 text-center md:text-left">
                         <h1 class="text-3xl font-bold mb-2">${profile.name || 'No Name'}</h1>
-                        <p class="text-xl text-blue-100 mb-2">@${profile.username || 'username'}</p>
-                        <p class="text-blue-200 mb-4">${profile.skill_category || profile.skill || 'Creative Professional'}</p>
+                        <p class="text-xl gradient-tint mb-2">@${profile.username || 'username'}</p>
+                        <p class="gradient-tint mb-4">${profile.skill_category || profile.skill || 'Creative Professional'}</p>
                         <div class="flex flex-wrap gap-4 text-sm">
                             <span><i class="fas fa-map-marker-alt mr-1"></i> ${profile.location || 'Location not specified'}</span>
                             <span><i class="fas fa-briefcase mr-1"></i> ${profile.years_of_experience || 0} years experience</span>
@@ -12313,7 +12080,7 @@ function renderApprenticeProfilePage(profile) {
                     <h2 class="text-2xl font-bold text-gray-900 mb-4">Skills</h2>
                     <div class="flex flex-wrap gap-2">
                         ${(profile.sub_skills || []).map(skill => `
-                            <span class="px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">${skill}</span>
+                            <span class="px-4 py-2 status-badge-lavender rounded-full text-sm font-medium">${skill}</span>
                         `).join('')}
                         ${(!profile.sub_skills || profile.sub_skills.length === 0) ? '<p class="text-gray-500">No skills specified</p>' : ''}
                     </div>
@@ -12346,7 +12113,7 @@ function renderApprenticeProfilePage(profile) {
                         <h2 class="text-2xl font-bold text-gray-900 mb-4">Certifications</h2>
                         <p class="text-gray-700 whitespace-pre-line">${profile.certifications}</p>
                         ${profile.certifications_url ? `
-                            <a href="${profile.certifications_url}" target="_blank" class="text-blue-600 hover:text-blue-800 mt-2 inline-block">
+                            <a href="${profile.certifications_url}" target="_blank" class="text-ink hover:text-navy mt-2 inline-block">
                                 <i class="fas fa-file-pdf mr-1"></i> View Certification Document
                             </a>
                         ` : ''}
@@ -12359,7 +12126,7 @@ function renderApprenticeProfilePage(profile) {
                         <h2 class="text-2xl font-bold text-gray-900 mb-4">Portfolio</h2>
                         <div class="space-y-2">
                             ${profile.portfolio_links.map(link => `
-                                <a href="${link}" target="_blank" class="text-blue-600 hover:text-blue-800 block">
+                                <a href="${link}" target="_blank" class="text-ink hover:text-navy block">
                                     <i class="fas fa-external-link-alt mr-2"></i> ${link}
                                 </a>
                             `).join('')}
@@ -12379,7 +12146,7 @@ function renderApprenticeProfilePage(profile) {
                 <!-- Resume -->
                 ${profile.resume_url ? `
                     <div class="mt-6">
-                        <a href="${profile.resume_url}" target="_blank" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        <a href="${profile.resume_url}" target="_blank" class="inline-flex items-center px-6 py-3 dashboard-action dashboard-action-primary rounded-lg">
                             <i class="fas fa-file-pdf mr-2"></i> Download Resume
                         </a>
                     </div>
@@ -12462,7 +12229,7 @@ function renderApprenticeCV(profile) {
                     <h2 class="text-xl font-bold text-gray-900 mb-3 border-b border-gray-200 pb-2">Portfolio</h2>
                     <ul class="list-disc list-inside space-y-1">
                         ${profile.portfolio_links.map(link => `
-                            <li><a href="${link}" target="_blank" class="text-blue-600 hover:text-blue-800">${link}</a></li>
+                            <li><a href="${link}" target="_blank" class="text-ink hover:text-navy">${link}</a></li>
                         `).join('')}
                     </ul>
                 </div>
@@ -12490,17 +12257,17 @@ function renderApprenticeJobIDCard(profile, stats = {}) {
                 >
                 <div class="flex-1">
                     <h3 class="text-lg font-bold text-gray-900 mb-1">${profile.name || 'No Name'}</h3>
-                    <p class="text-sm text-blue-600 font-medium mb-2">${profile.skill_category || profile.skill || 'Creative Professional'}</p>
+                    <p class="text-sm text-ink font-medium mb-2">${profile.skill_category || profile.skill || 'Creative Professional'}</p>
                     
                     <div class="flex items-center gap-2 mb-2">
-                        <span class="text-yellow-500 text-sm">${ratingStars}</span>
+                        <span class="text-yellow-400 text-sm">${ratingStars}</span>
                         <span class="text-sm text-gray-600">
                             ${hasRating ? rating.toFixed(1) : 'No ratings yet'}
                         </span>
                     </div>
                     
                     <div class="flex items-center gap-4 text-sm text-gray-600 mb-2">
-                        <span><i class="fas fa-check-circle text-green-600 mr-1"></i> ${completedJobs} completed</span>
+                        <span><i class="fas fa-check-circle text-mint mr-1"></i> ${completedJobs} completed</span>
                         <span><i class="fas fa-briefcase mr-1"></i> ${profile.years_of_experience || 0} yrs exp</span>
                     </div>
                     
@@ -12526,7 +12293,7 @@ function renderMemberProfilePage(profile) {
     return `
         <div class="bg-white rounded-lg shadow-lg overflow-hidden">
             <!-- Header Section -->
-            <div class="bg-gradient-to-r from-purple-600 to-purple-800 p-8 text-white">
+            <div class="gradient-ink p-8 text-white">
                 <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
                     <img 
                         src="${profile.logo_url || `https://placehold.co/150x150/EBF4FF/3B82F6?text=${(profile.business_name || profile.name || 'B').charAt(0).toUpperCase()}`}" 
@@ -12535,7 +12302,7 @@ function renderMemberProfilePage(profile) {
                     >
                     <div class="flex-1 text-center md:text-left">
                         <h1 class="text-3xl font-bold mb-2">${profile.business_name || profile.name || 'Business'}</h1>
-                        <p class="text-xl text-purple-100 mb-2">${profile.industry || profile.creative_type || 'Business'}</p>
+                        <p class="text-xl gradient-tint mb-2">${profile.industry || profile.creative_type || 'Business'}</p>
                         <div class="flex flex-wrap gap-4 text-sm">
                             <span><i class="fas fa-map-marker-alt mr-1"></i> ${profile.business_location || profile.location || 'Location not specified'}</span>
                             <span><i class="fas fa-calendar mr-1"></i> Joined ${joinedDate}</span>
@@ -12558,7 +12325,7 @@ function renderMemberProfilePage(profile) {
                         <h2 class="text-2xl font-bold text-gray-900 mb-4">Services Offered</h2>
                         <div class="flex flex-wrap gap-2">
                             ${profile.services_offered.map(service => `
-                                <span class="px-4 py-2 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">${service}</span>
+                                <span class="px-4 py-2 status-badge-lavender rounded-full text-sm font-medium">${service}</span>
                             `).join('')}
                         </div>
                     </div>
@@ -12593,7 +12360,7 @@ function renderMemberProfilePage(profile) {
                         <h2 class="text-2xl font-bold text-gray-900 mb-4">Website & Social Links</h2>
                         <div class="space-y-2">
                             ${profile.website_social_links.map(link => `
-                                <a href="${link}" target="_blank" class="text-purple-600 hover:text-purple-800 block">
+                                <a href="${link}" target="_blank" class="text-lavender hover:text-navy block">
                                     <i class="fas fa-external-link-alt mr-2"></i> ${link}
                                 </a>
                             `).join('')}
@@ -12631,10 +12398,10 @@ function renderMemberBusinessIDCard(profile, stats = {}) {
                 >
                 <div class="flex-1">
                     <h3 class="text-lg font-bold text-gray-900 mb-1">${profile.business_name || profile.name || 'Business'}</h3>
-                    <p class="text-sm text-purple-600 font-medium mb-2">${profile.industry || profile.creative_type || 'Business'}</p>
+                    <p class="text-sm text-lavender font-medium mb-2">${profile.industry || profile.creative_type || 'Business'}</p>
                     
                     <div class="flex items-center gap-4 text-sm text-gray-600 mb-2">
-                        <span><i class="fas fa-check-circle text-green-600 mr-1"></i> ${completedHires} hires</span>
+                        <span><i class="fas fa-check-circle text-mint mr-1"></i> ${completedHires} hires</span>
                     </div>
                     
                     ${profile.business_description || profile.description ? `

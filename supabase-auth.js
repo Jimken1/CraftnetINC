@@ -4675,6 +4675,63 @@ async function processRefund(clientId, escrowAmount, jobRequestId, jobTitle) {
 // REFERRAL WALLET SYSTEM FUNCTIONS
 // ==============================================
 
+// Real monthly earnings for the trailing N months, based on completed escrow releases.
+export async function getMonthlyEarnings(apprenticeId, monthsBack = 4) {
+    const now = new Date();
+    const startDate = new Date(
+        now.getFullYear(),
+        now.getMonth() - (monthsBack - 1),
+        1
+    );
+
+    const { data, error } = await supabase
+        .from("wallet_transactions")
+        .select("amount_ngn, created_at")
+        .eq("user_id", apprenticeId)
+        .eq("transaction_type", "escrow_release")
+        .eq("status", "completed")
+        .gte("created_at", startDate.toISOString())
+        .order("created_at", { ascending: true });
+
+    if (error) throw error;
+
+    const buckets = [];
+    for (let i = monthsBack - 1; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        buckets.push({
+            label: d.toLocaleString("en-US", { month: "long", year: "numeric" }),
+            year: d.getFullYear(),
+            month: d.getMonth(),
+            amountNgn: 0,
+        });
+    }
+
+    (data || []).forEach((tx) => {
+        const txDate = new Date(tx.created_at);
+        const bucket = buckets.find(
+            (b) => b.year === txDate.getFullYear() && b.month === txDate.getMonth()
+        );
+        if (bucket) {
+            bucket.amountNgn += Number(tx.amount_ngn) || 0;
+        }
+    });
+
+    return buckets;
+}
+
+// Real recent transaction history for recent-activity lists.
+export async function getRecentTransactions(apprenticeId, limit = 5) {
+    const { data, error } = await supabase
+        .from("wallet_transactions")
+        .select("id, transaction_type, amount_ngn, description, status, created_at, reference")
+        .eq("user_id", apprenticeId)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+    if (error) throw error;
+    return data || [];
+}
+
 // Get user's referral wallet
 export async function getReferralWallet(userId) {
     try {

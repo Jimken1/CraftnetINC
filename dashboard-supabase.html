@@ -21,6 +21,8 @@
         <link rel="stylesheet" href="wallet-interface-styles.css">
         <link rel="stylesheet" href="dark-mode.css">
         <link rel="stylesheet" href="mobile-responsive.css">
+        <link rel="stylesheet" href="dashboard-theme.css">
+        <script src="dark-mode.js"></script>
         <style>
             body {
                 font-family: "Inter", sans-serif;
@@ -56,66 +58,8 @@
                     width: 100%;
                 }
             }
-            .nav-link.active {
-                color: #1d4ed8;
-                border-bottom-color: #1d4ed8;
-            }
-            
-            /* Navigation tab spacing */
-            .nav-link {
-                white-space: nowrap !important;
-                flex-shrink: 0 !important;
-                min-width: fit-content;
-                display: inline-flex !important;
-                align-items: center;
-            }
-            
-            #main-nav {
-                gap: 0;
-            }
-            
-            /* Mobile navigation spacing */
+            /* Keep the fixed header in normal document flow on phones. */
             @media (max-width: 767px) {
-                .nav-link {
-                    padding: 10px 8px !important;
-                    font-size: 12px !important;
-                    margin-right: 4px !important;
-                    min-width: fit-content;
-                    flex-shrink: 0;
-                }
-                
-                .nav-link:last-child {
-                    margin-right: 0 !important;
-                }
-                
-                .nav-link i {
-                    margin-right: 3px !important;
-                    width: 14px !important;
-                    height: 14px !important;
-                    flex-shrink: 0;
-                }
-                
-                .nav-link span {
-                    font-size: 12px !important;
-                }
-                
-                #main-nav {
-                    padding-left: 12px;
-                    padding-right: 12px;
-                    display: flex !important;
-                    flex-wrap: nowrap !important;
-                    overflow-x: auto !important;
-                    -webkit-overflow-scrolling: touch;
-                    scrollbar-width: none;
-                    -ms-overflow-style: none;
-                    gap: 0;
-                }
-                
-                #main-nav::-webkit-scrollbar {
-                    display: none;
-                }
-
-                /* Make header fixed and dashboard layout scrollable */
                 header {
                     position: fixed !important;
                     top: 0;
@@ -126,32 +70,11 @@
 
                 #dashboard-layout {
                     position: relative;
-                    top: 56px;
-                    height: calc(100vh - 56px);
-                    overflow-y: auto;
+                    padding-top: 56px;
                     overflow-x: hidden;
                 }
             }
             
-            /* Tablet and desktop navigation spacing */
-            @media (min-width: 768px) {
-                .nav-link {
-                    padding: 10px 18px !important;
-                    margin-right: 8px !important;
-                    font-size: 14px !important;
-                }
-                
-                .nav-link:last-child {
-                    margin-right: 0 !important;
-                }
-            }
-            
-            @media (min-width: 1024px) {
-                .nav-link {
-                    padding: 10px 20px !important;
-                    margin-right: 12px !important;
-                }
-            }
             .stat-card {
                 transition: transform 0.2s ease-in-out,
                     box-shadow 0.2s ease-in-out;
@@ -411,33 +334,6 @@
                     horizontal scrolling. Forces flex display and enables smooth
                     horizontal scrolling for the navigation tabs.
                 */
-                #main-nav {
-                    display: flex !important;
-                    overflow-x: auto !important;
-                    -webkit-overflow-scrolling: touch !important;
-                    scrollbar-width: none !important;
-                    -ms-overflow-style: none !important;
-                }
-
-                /* 
-                    TABS SCROLLBAR HIDDEN (Webkit browsers)
-                    Overrides: default webkit scrollbar display.
-                    Hides the scrollbar while maintaining scroll functionality.
-                */
-                #main-nav::-webkit-scrollbar {
-                    display: none !important;
-                }
-
-                /* 
-                    TAB ITEMS FIX - EXACTLY 3 TABS VISIBLE
-                    Overrides: flex-basis, flex-grow, flex-shrink properties.
-                    Sets each tab to take up 32% width so exactly 3 tabs fit
-                    with a little breathing room, allowing smooth horizontal scroll.
-                */
-                #main-nav .nav-link {
-                    flex: 0 0 32% !important;
-                    min-width: 0 !important;
-                }
             }
 
             /* 
@@ -528,8 +424,7 @@
                 line-height: 1.5;
             }
 
-            #dashboard-layout button,
-            #dashboard-layout .nav-link {
+            #dashboard-layout button {
                 border-radius: 10px;
                 transition: background-color 0.2s ease, transform 0.12s ease, box-shadow 0.2s ease;
             }
@@ -556,16 +451,6 @@
                 border: 1px solid #86efac !important;
             }
 
-            #dashboard-layout *::-webkit-scrollbar {
-                width: 8px;
-                height: 8px;
-            }
-
-            #dashboard-layout *::-webkit-scrollbar-thumb {
-                background: #94a3b8;
-                border-radius: 10px;
-            }
-
             @media (max-width: 767px) {
                 body {
                     font-size: 15px;
@@ -573,9 +458,7 @@
                 }
 
                 #dashboard-layout {
-                    top: 56px;
-                    height: calc(100vh - 56px);
-                    overflow-y: auto;
+                    padding-top: 56px;
                     overflow-x: hidden;
                 }
 
@@ -596,10 +479,6 @@
                     border-radius: 12px;
                     padding-left: 12px !important;
                     padding-right: 12px !important;
-                }
-
-                #main-nav .nav-link {
-                    min-height: 44px;
                 }
 
                 #dashboard-layout table {
@@ -972,14 +851,6 @@
                             </svg>
                         </a>
                         <div class="flex items-center space-x-2 sm:space-x-4">
-                            <button
-                                class="dashboard-mobile-toggle hidden text-gray-500 hover:text-gray-800 p-2 rounded-full hover:bg-gray-100 min-w-[44px] min-h-[44px] flex items-center justify-center md:hidden"
-                                id="dashboard-mobile-menu-toggle"
-                                aria-label="Open mobile menu"
-                                title="Menu"
-                            >
-                                <i data-lucide="menu" class="w-5 h-5"></i>
-                            </button>
                             <div class="text-right hidden sm:block">
                                 <p
                                     id="user-name"
@@ -1057,11 +928,7 @@
                     <nav
                         id="main-nav"
                         class="flex border-t border-gray-200 -mb-px overflow-x-auto pb-2"
-                        style="-webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;"
                     >
-                        <style>
-                            #main-nav::-webkit-scrollbar { display: none; }
-                        </style>
                     </nav>
                 </div>
             </header>
@@ -1072,6 +939,17 @@
             >
             </main>
         </div>
+
+        <div id="dashboard-mobile-nav-overlay" aria-hidden="true"></div>
+        <aside id="dashboard-mobile-nav-drawer" aria-hidden="true" aria-label="Dashboard navigation">
+            <div class="dashboard-mobile-nav-header">
+                <span class="text-lg font-semibold">Menu</span>
+                <button type="button" class="dashboard-mobile-nav-close" aria-label="Close menu">
+                    <i data-feather="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <nav class="dashboard-mobile-nav-menu"></nav>
+        </aside>
 
         <div
             id="upload-modal"
@@ -2502,6 +2380,5 @@
                 }
             });
         </script>
-        <script src="dark-mode.js"></script>
     </body>
 </html>

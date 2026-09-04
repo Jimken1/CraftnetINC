@@ -30,10 +30,10 @@
     flex-shrink: 0;
 }
 
-.header-actions {
-    display: flex;
+.header-actions > a {
+    line-height: 1;
+    display: inline-flex;
     align-items: center;
-    gap: 0.75rem;
 }
 
 @media (max-width: 640px) {
@@ -85,6 +85,13 @@ html.dark .text-gray-800 {
     color: var(--dark-text-primary) !important;
 }
 
+html.dark .text-ink\/45,
+html.dark .text-ink\/50,
+html.dark .text-ink\/60,
+html.dark .text-ink\/65,
+html.dark .text-ink\/70,
+html.dark .text-ink\/75,
+html.dark .text-ink\/80,
 html.dark .text-gray-600,
 html.dark .text-gray-500,
 html.dark .text-gray-700 {
@@ -95,20 +102,88 @@ html.dark .bg-navy {
     background-color: #16151F !important;
 }
 
+html.dark .auth-page {
+    background: var(--dark-bg-primary) !important;
+    color: var(--dark-text-primary) !important;
+}
+
+html.dark .auth-page::before {
+    background: #16151F;
+    color: var(--dark-text-primary);
+}
+
+html.dark .auth-page .auth-shell,
+html.dark .auth-page #forgot-password-modal > div:last-child > div {
+    background: var(--dark-bg-secondary) !important;
+    border-color: var(--dark-border) !important;
+}
+
+html.dark .auth-page h2,
+html.dark .auth-page h3,
+html.dark .auth-page label,
+html.dark .auth-page p {
+    color: var(--dark-text-primary) !important;
+}
+
+html.dark .auth-page input,
+html.dark .auth-page select {
+    background: var(--dark-bg-tertiary) !important;
+    border-color: var(--dark-border) !important;
+    color: var(--dark-text-primary) !important;
+}
+
+html.dark .auth-page input::placeholder {
+    color: var(--dark-text-tertiary) !important;
+}
+
+html.dark .auth-page a,
+html.dark .auth-page button:not([type="submit"]) {
+    color: var(--dark-text-secondary) !important;
+}
+
+html.dark .bg-cream\/95,
+html.dark .bg-\[\#FAF6EC\],
+html.dark .bg-\[\#F9EBD7\],
+html.dark .bg-\[\#F5F1E6\],
+html.dark .bg-\[\#F7EFE3\],
+html.dark .bg-\[\#F6F0E8\],
+html.dark .bg-\[\#F9F4EE\],
+html.dark .bg-\[\#F7DAB0\],
+html.dark .bg-\[\#F4B26A\],
+html.dark .bg-white\/90,
+html.dark .bg-white\/80,
+html.dark .bg-white\/70,
+html.dark .bg-white\/60,
+html.dark .bg-white\/50,
+html.dark .bg-white\/40,
+html.dark .bg-white\/30,
+html.dark .bg-white\/20,
+html.dark .bg-white\/10 {
+    background-color: var(--dark-bg-tertiary) !important;
+    color: var(--dark-text-primary) !important;
+}
+
 html.dark .bg-white,
 html.dark .bg-cream,
 html.dark .bg-section-lavender,
 html.dark .bg-chip-peach,
 html.dark .bg-chip-mint,
 html.dark .bg-chip-lavender,
-html.dark .bg-chip-pink {
+html.dark .bg-chip-pink,
+html.dark .bg-black\/50 {
     background-color: var(--dark-bg-secondary) !important;
 }
 
 html.dark .border-ink\/10,
 html.dark .border-ink\/5,
 html.dark .border-gray-200,
-html.dark .border-gray-300 {
+html.dark .border-gray-300,
+html.dark .border-\[\#E9E0D3\],
+html.dark .border-\[\#E7DED0\],
+html.dark .border-\[\#EDE2D2\],
+html.dark .border-\[\#EAE0D4\],
+html.dark .border-\[\#E6DDD0\],
+html.dark .border-\[\#EDE7DF\] {
     border-color: var(--dark-border) !important;
 }
 
@@ -268,6 +343,11 @@ html.dark .hamburger svg {
     /* Ensure ALL mobile text is visible in dark mode */
     html.dark body,
     html.dark * {
+        color: var(--dark-text-primary) !important;
+    }
+
+    html.dark .bg-\[\#F9EBD7\] {
+        background-color: var(--dark-bg-tertiary) !important;
         color: var(--dark-text-primary) !important;
     }
 

@@ -10,14 +10,6 @@ class DarkModeManager {
     }
 
     init() {
-        const path = window.location.pathname;
-        const isHomepage = path === '/' || path.endsWith('index.html') || path === '';
-
-        if (!isHomepage) {
-            document.documentElement.classList.remove('dark');
-            return;
-        }
-
         // Check for saved preference or default to system preference
         const savedPreference = localStorage.getItem(this.storageKey);
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -30,7 +22,7 @@ class DarkModeManager {
             this.setDarkMode(savedPreference === 'true');
         }
 
-        // Create and inject toggle button
+        this.bindToggleEvents();
         this.createToggleButton();
         
         // Listen for system preference changes (only if no manual preference is set)
@@ -41,17 +33,27 @@ class DarkModeManager {
         });
     }
 
+    bindToggleEvents() {
+        if (this.toggleEventsBound) return;
+        this.toggleEventsBound = true;
+        document.addEventListener('click', (event) => {
+            const toggle = event.target.closest('.dark-mode-toggle');
+            if (toggle) this.toggle(toggle);
+        });
+    }
+
     createToggleButton() {
-        const path = window.location.pathname;
-        const isHomepage = path === '/' || path.endsWith('index.html') || path === '';
-        if (!isHomepage) return;
+        const dashboardNav = document.querySelector('#main-nav');
+        if (dashboardNav && dashboardNav.children.length > 0) {
+            this.ensureDashboardToggle(dashboardNav);
+            return;
+        }
 
         const existingToggles = document.querySelectorAll('.dark-mode-toggle');
         if (existingToggles.length > 0) {
             existingToggles.forEach((toggle) => {
                 toggle.setAttribute('aria-label', 'Toggle dark mode');
                 toggle.setAttribute('title', 'Toggle dark mode');
-                toggle.addEventListener('click', () => this.toggle(toggle));
             });
             this.updateIcon();
             return;
@@ -66,8 +68,19 @@ class DarkModeManager {
         toggle.setAttribute('aria-label', 'Toggle dark mode');
         toggle.setAttribute('title', 'Toggle dark mode');
         toggle.innerHTML = this.getIcon();
-        toggle.addEventListener('click', () => this.toggle(toggle));
         actionsContainer.appendChild(toggle);
+    }
+
+    ensureDashboardToggle(nav) {
+        if (!nav || nav.querySelector('.dashboard-dark-mode-toggle')) return;
+
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'nav-link dashboard-dark-mode-toggle dark-mode-toggle';
+        toggle.setAttribute('aria-label', 'Toggle dark mode');
+        toggle.setAttribute('title', 'Toggle dark mode');
+        nav.appendChild(toggle);
+        this.updateIcon();
     }
 
     getIcon() {
@@ -92,7 +105,15 @@ class DarkModeManager {
     updateIcon() {
         const toggles = document.querySelectorAll('.dark-mode-toggle');
         toggles.forEach((toggle) => {
-            toggle.innerHTML = this.getIcon();
+            if (toggle.classList.contains('dashboard-dark-mode-toggle')) {
+                toggle.innerHTML = `
+                    <span class="dashboard-dark-mode-icon" aria-hidden="true">${this.getIcon()}</span>
+                    <span class="dashboard-dark-mode-label">${this.isDarkMode() ? 'Light Mode' : 'Dark Mode'}</span>
+                    <span class="dashboard-dark-mode-state" aria-hidden="true"></span>
+                `;
+            } else {
+                toggle.innerHTML = this.getIcon();
+            }
         });
     }
 
@@ -112,7 +133,7 @@ class DarkModeManager {
         this.setDarkMode(!isDark);
         
         // Add a subtle animation effect
-        if (sourceToggle) {
+        if (sourceToggle && !sourceToggle.classList.contains('dashboard-dark-mode-toggle')) {
             sourceToggle.style.transform = 'scale(0.9)';
             setTimeout(() => {
                 sourceToggle.style.transform = '';
