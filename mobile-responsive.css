@@ -1945,6 +1945,10 @@ header,
     padding-bottom: 4rem !important;
   }
 
+  .home-stats-strip {
+    display: none;
+  }
+
   #features .mx-auto.max-w-7xl > .relative {
     margin-bottom: 1.5rem !important;
   }
