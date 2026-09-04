@@ -40,6 +40,143 @@
                 top: 0;
                 z-index: 50;
             }
+
+            .jobs-cube-scene {
+                --cube-size: min(430px, calc(100vw - 2rem));
+                --cube-height: 470px;
+                --cube-depth: calc(var(--cube-size) / 2);
+                width: var(--cube-size);
+                height: var(--cube-height);
+                margin: 2.5rem auto 0;
+                perspective: 1200px;
+                touch-action: pan-y;
+            }
+
+            .jobs-cube-stage {
+                position: relative;
+                width: 100%;
+                height: 100%;
+                display: grid;
+                place-items: center;
+                transform-style: preserve-3d;
+            }
+
+            .jobs-cube-stage::after {
+                content: "";
+                position: absolute;
+                z-index: -1;
+                bottom: -1.25rem;
+                left: 10%;
+                width: 80%;
+                height: 2rem;
+                border-radius: 50%;
+                background: rgba(42, 39, 64, .18);
+                filter: blur(16px);
+                transform: translateZ(-20px);
+            }
+
+            .jobs-cube {
+                position: relative;
+                width: 100%;
+                height: 100%;
+                transform-style: preserve-3d;
+                transition: transform 850ms cubic-bezier(.22, .61, .36, 1);
+                will-change: transform;
+            }
+
+            .jobs-cube-face {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                flex-direction: column;
+                padding: 1.5rem;
+                border: 1px solid #EDE7DF;
+                border-radius: 1.25rem;
+                background: #fff;
+                box-shadow: 0 22px 44px rgba(42, 39, 64, .14), 0 4px 12px rgba(42, 39, 64, .08);
+                backface-visibility: hidden;
+                -webkit-backface-visibility: hidden;
+                overflow: hidden;
+}
+
+            .jobs-cube-face:nth-child(1) { transform: rotateY(0deg) translateZ(var(--cube-depth)); }
+            .jobs-cube-face:nth-child(2) { transform: rotateY(90deg) translateZ(var(--cube-depth)); }
+            .jobs-cube-face:nth-child(3) { transform: rotateY(180deg) translateZ(var(--cube-depth)); }
+            .jobs-cube-face:nth-child(4) { transform: rotateY(-90deg) translateZ(var(--cube-depth)); }
+
+            .jobs-cube-face[aria-hidden="true"] a,
+            .jobs-cube-face[aria-hidden="true"] button { pointer-events: none; }
+
+            .jobs-cube-face > div:first-child {
+                display: flex;
+                flex-direction: row !important;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: .75rem;
+            }
+
+            .jobs-cube-face > div:first-child > div:first-child {
+                width: 3rem !important;
+                height: 3rem !important;
+                flex: 0 0 3rem;
+            }
+
+            .jobs-cube-face > div:first-child > span { width: auto; }
+
+            .jobs-cube-controls {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: .75rem;
+                margin-top: 1.5rem;
+            }
+
+            .jobs-cube-control,
+            .jobs-cube-dot {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 2.75rem;
+                min-height: 2.75rem;
+                border: 1px solid rgba(42, 39, 64, .14);
+                border-radius: 999px;
+                background: rgba(255, 255, 255, .72);
+                color: #2A2740;
+                transition: background-color 180ms ease, color 180ms ease, transform 180ms ease;
+            }
+
+            .jobs-cube-control:hover,
+            .jobs-cube-control:focus-visible,
+            .jobs-cube-dot:hover,
+            .jobs-cube-dot:focus-visible {
+                background: #2A2740;
+                color: #FAF6EC;
+                transform: translateY(-1px);
+            }
+
+            .jobs-cube-control:focus-visible,
+            .jobs-cube-dot:focus-visible { outline: 2px solid #1F6B41; outline-offset: 3px; }
+            .jobs-cube-control svg { width: 1.1rem; height: 1.1rem; }
+            .jobs-cube-dots { display: flex; align-items: center; gap: .45rem; }
+            .jobs-cube-dot { min-width: .7rem; min-height: .7rem; width: .7rem; height: .7rem; padding: 0; background: rgba(42, 39, 64, .22); border: 0; }
+            .jobs-cube-dot[aria-current="true"] { width: 1.8rem; background: #2A2740; }
+            .jobs-cube-status { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+            html.dark .jobs-cube-face { background: var(--dark-bg-tertiary); border-color: var(--dark-border); box-shadow: 0 22px 44px rgba(0, 0, 0, .32), 0 4px 12px rgba(0, 0, 0, .2); }
+            html.dark .jobs-cube-control { background: rgba(45, 42, 58, .8); color: var(--dark-text-primary); border-color: var(--dark-border); }
+            html.dark .jobs-cube-dot { background: rgba(247, 242, 234, .3); }
+            html.dark .jobs-cube-dot[aria-current="true"] { background: var(--dark-text-primary); }
+
+            @media (max-width: 640px) {
+                .jobs-cube-scene { --cube-height: 430px; }
+                .jobs-cube-face { padding: 1.25rem; }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .jobs-cube { transition: none; }
+                .jobs-cube-control,
+                .jobs-cube-dot { transition: none; }
+            }
         </style>
     </head>
     <!--
@@ -227,8 +364,10 @@
                         <h2 class="mt-5 text-3xl font-bold tracking-tight text-ink sm:text-4xl">Fresh opportunities for creative talent</h2>
                     </div>
 
-                    <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-                        <article class="feature-card reveal white-card rounded-2xl border border-[#EDE7DF] bg-white p-5 shadow-card">
+                    <div class="jobs-cube-scene reveal" aria-label="Featured opportunities">
+                        <div class="jobs-cube-stage">
+                            <div class="jobs-cube" data-cube-index="0">
+                        <article class="jobs-cube-face" data-cube-face="0" aria-hidden="false">
                             <div class="flex items-start justify-between gap-3">
                                 <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-chip-peach text-ink">
                                     <i data-lucide="palette" class="h-5 w-5"></i>
@@ -250,7 +389,7 @@
                             </div>
                         </article>
 
-                        <article class="feature-card reveal white-card rounded-2xl border border-[#EDE7DF] bg-white p-5 shadow-card reveal-delay-1">
+                        <article class="jobs-cube-face" data-cube-face="1" aria-hidden="true" inert>
                             <div class="flex items-start justify-between gap-3">
                                 <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-chip-mint text-ink">
                                     <i data-lucide="camera" class="h-5 w-5"></i>
@@ -272,7 +411,7 @@
                             </div>
                         </article>
 
-                        <article class="feature-card reveal white-card rounded-2xl border border-[#EDE7DF] bg-white p-5 shadow-card reveal-delay-2">
+                        <article class="jobs-cube-face" data-cube-face="2" aria-hidden="true" inert>
                             <div class="flex items-start justify-between gap-3">
                                 <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-chip-lavender text-ink">
                                     <i data-lucide="code-2" class="h-5 w-5"></i>
@@ -294,7 +433,7 @@
                             </div>
                         </article>
 
-                        <article class="feature-card reveal white-card rounded-2xl border border-[#EDE7DF] bg-white p-5 shadow-card reveal-delay-3">
+                        <article class="jobs-cube-face" data-cube-face="3" aria-hidden="true" inert>
                             <div class="flex items-start justify-between gap-3">
                                 <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-chip-pink text-ink">
                                     <i data-lucide="mic" class="h-5 w-5"></i>
@@ -315,6 +454,23 @@
                                 <a href="signup-member-supabase.html" class="inline-flex min-h-[44px] items-center justify-center rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-cream hover:bg-navy">View</a>
                             </div>
                         </article>
+                            </div>
+                        </div>
+                        <div class="jobs-cube-status" aria-live="polite">Brand identity refresh opportunity</div>
+                    </div>
+                    <div class="jobs-cube-controls" aria-label="Opportunity controls">
+                        <button class="jobs-cube-control jobs-cube-prev" type="button" aria-label="Previous opportunity">
+                            <i data-lucide="arrow-left" aria-hidden="true"></i>
+                        </button>
+                        <div class="jobs-cube-dots" role="tablist" aria-label="Choose an opportunity">
+                            <button class="jobs-cube-dot" type="button" role="tab" aria-label="Show Brand identity refresh opportunity" aria-current="true"></button>
+                            <button class="jobs-cube-dot" type="button" role="tab" aria-label="Show Product photography opportunity" aria-current="false"></button>
+                            <button class="jobs-cube-dot" type="button" role="tab" aria-label="Show Landing page build opportunity" aria-current="false"></button>
+                            <button class="jobs-cube-dot" type="button" role="tab" aria-label="Show Short-form promo reel opportunity" aria-current="false"></button>
+                        </div>
+                        <button class="jobs-cube-control jobs-cube-next" type="button" aria-label="Next opportunity">
+                            <i data-lucide="arrow-right" aria-hidden="true"></i>
+                        </button>
                     </div>
                 </div>
             </section>
@@ -407,6 +563,97 @@
 
             document.addEventListener('DOMContentLoaded', () => {
                 convertFeatherToLucide();
+
+                const cubeScene = document.querySelector('.jobs-cube-scene');
+                const cube = cubeScene?.querySelector('.jobs-cube');
+                const cubeFaces = cube ? Array.from(cube.querySelectorAll('.jobs-cube-face')) : [];
+                const cubeDots = cubeScene?.parentElement.querySelectorAll('.jobs-cube-dot') || [];
+                const previousButton = cubeScene?.parentElement.querySelector('.jobs-cube-prev');
+                const nextButton = cubeScene?.parentElement.querySelector('.jobs-cube-next');
+                const cubeStatus = cubeScene?.querySelector('.jobs-cube-status');
+                const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+                let cubeIndex = 0;
+                let autoplayTimer = null;
+                let isHovering = false;
+                let touchStartX = null;
+
+                const scheduleCubeAutoplay = (delay = 4500) => {
+                    window.clearTimeout(autoplayTimer);
+                    autoplayTimer = null;
+                    if (reducedMotion.matches || isHovering) return;
+                    autoplayTimer = window.setTimeout(() => {
+                        goToCubeFace(cubeIndex + 1);
+                    }, delay);
+                };
+
+                const updateCubeAccessibility = () => {
+                    cubeFaces.forEach((face, index) => {
+                        const isActive = index === cubeIndex;
+                        face.setAttribute('aria-hidden', String(!isActive));
+                        if (isActive) face.removeAttribute('inert');
+                        else face.setAttribute('inert', '');
+                    });
+                    cubeDots.forEach((dot, index) => {
+                        dot.setAttribute('aria-current', String(index === cubeIndex));
+                    });
+                    if (cubeStatus) {
+                        const title = cubeFaces[cubeIndex]?.querySelector('h3')?.textContent || 'Featured opportunity';
+                        cubeStatus.textContent = `${title} opportunity`;
+                    }
+                };
+
+                function goToCubeFace(nextIndex) {
+                    if (!cube || cubeFaces.length !== 4) return;
+                    cubeIndex = (nextIndex + cubeFaces.length) % cubeFaces.length;
+                    cube.style.transform = `rotateY(${-cubeIndex * 90}deg)`;
+                    updateCubeAccessibility();
+                    scheduleCubeAutoplay();
+                }
+
+                if (cube && cubeFaces.length === 4) {
+                    previousButton?.addEventListener('click', () => goToCubeFace(cubeIndex - 1));
+                    nextButton?.addEventListener('click', () => goToCubeFace(cubeIndex + 1));
+                    cubeDots.forEach((dot, index) => {
+                        dot.addEventListener('click', () => goToCubeFace(index));
+                    });
+
+                    cubeScene.addEventListener('mouseenter', () => {
+                        isHovering = true;
+                        window.clearTimeout(autoplayTimer);
+                        autoplayTimer = null;
+                    });
+                    cubeScene.addEventListener('mouseleave', () => {
+                        isHovering = false;
+                        scheduleCubeAutoplay(1000);
+                    });
+                    cubeScene.addEventListener('touchstart', (event) => {
+                        if (event.target.closest('a, button')) return;
+                        touchStartX = event.changedTouches[0]?.clientX ?? null;
+                        window.clearTimeout(autoplayTimer);
+                        autoplayTimer = null;
+                    }, { passive: true });
+                    cubeScene.addEventListener('touchend', (event) => {
+                        if (touchStartX === null || event.target.closest('a, button')) return;
+                        const touchEndX = event.changedTouches[0]?.clientX ?? touchStartX;
+                        const swipeDistance = touchEndX - touchStartX;
+                        if (Math.abs(swipeDistance) > 45) {
+                            goToCubeFace(swipeDistance < 0 ? cubeIndex + 1 : cubeIndex - 1);
+                        } else {
+                            scheduleCubeAutoplay(1000);
+                        }
+                        touchStartX = null;
+                    }, { passive: true });
+                    reducedMotion.addEventListener?.('change', () => {
+                        if (reducedMotion.matches) {
+                            window.clearTimeout(autoplayTimer);
+                            autoplayTimer = null;
+                        } else {
+                            scheduleCubeAutoplay();
+                        }
+                    });
+                    updateCubeAccessibility();
+                    scheduleCubeAutoplay();
+                }
 
                 const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
                 const revealItems = document.querySelectorAll('.reveal');
