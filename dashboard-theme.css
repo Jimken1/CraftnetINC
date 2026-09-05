@@ -37,6 +37,31 @@ body {
     transition: background-color 180ms ease, color 180ms ease;
 }
 
+.dashboard-header-logo {
+    display: block;
+    width: 64px !important;
+    height: 64px !important;
+    max-width: 64px !important;
+    max-height: 64px !important;
+    flex: 0 0 auto;
+    object-fit: contain;
+}
+
+#dashboard-layout header .dashboard-header-logo {
+    width: 64px !important;
+    height: 64px !important;
+    max-width: 64px !important;
+    max-height: 64px !important;
+}
+
+#dashboard-layout header a[href*="index"] .dashboard-header-logo,
+#dashboard-layout header .dashboard-left .dashboard-header-logo {
+    width: 64px !important;
+    height: 64px !important;
+    max-width: 64px !important;
+    max-height: 64px !important;
+}
+
 #dashboard-layout {
     background: var(--dashboard-bg) !important;
     color: var(--dashboard-text-primary);
@@ -584,6 +609,36 @@ html.dark .dashboard-dark-mode-state {
 }
 
 @media (max-width: 767px) {
+    #dashboard-layout header .dashboard-header-logo {
+        width: 52px !important;
+        height: 52px !important;
+        max-width: 52px !important;
+        max-height: 52px !important;
+        flex: 0 0 auto;
+    }
+
+    #dashboard-layout header a[href*="index"] .dashboard-header-logo,
+    #dashboard-layout header .dashboard-left .dashboard-header-logo {
+        width: 52px !important;
+        height: 52px !important;
+        max-width: 52px !important;
+        max-height: 52px !important;
+    }
+
+    #dashboard-layout header .dashboard-left a[href*="index"] .dashboard-header-logo {
+        width: 52px !important;
+        height: 52px !important;
+        max-width: 52px !important;
+        max-height: 52px !important;
+    }
+
+    #dashboard-layout header .dashboard-left a[href*="index"] svg.dashboard-header-logo:not(.h-12):not(.h-14):not(.h-16):not(.h-20) {
+        width: 52px !important;
+        height: 52px !important;
+        max-width: 52px !important;
+        max-height: 52px !important;
+    }
+
     #dashboard-layout header .dashboard-header-row {
         display: flex;
         align-items: center;
@@ -728,4 +783,84 @@ html.dark .dashboard-dark-mode-state {
     #dashboard-layout,
     .dashboard-dark-mode-toggle,
     .dashboard-dark-mode-thumb { transition: none !important; }
+}
+
+/* Theme control owns its contrast instead of inheriting nav-link colors. */
+html:not(.dark) #main-nav .dashboard-dark-mode-toggle,
+html:not(.dark) #dashboard-mobile-nav-drawer .dashboard-dark-mode-toggle {
+    color: var(--dashboard-ink) !important;
+    background: var(--dashboard-cream) !important;
+    border-color: rgba(22, 21, 31, .2) !important;
+}
+
+html:not(.dark) #main-nav .dashboard-dark-mode-toggle:hover,
+html:not(.dark) #dashboard-mobile-nav-drawer .dashboard-dark-mode-toggle:hover {
+    color: var(--dashboard-ink) !important;
+    background: var(--dashboard-cream-soft) !important;
+    border-color: rgba(22, 21, 31, .3) !important;
+}
+
+html:not(.dark) #main-nav .dashboard-dark-mode-toggle .dashboard-dark-mode-copy,
+html:not(.dark) #main-nav .dashboard-dark-mode-toggle .dashboard-dark-mode-icon,
+html:not(.dark) #main-nav .dashboard-dark-mode-toggle .dashboard-dark-mode-label,
+html:not(.dark) #dashboard-mobile-nav-drawer .dashboard-dark-mode-toggle .dashboard-dark-mode-copy,
+html:not(.dark) #dashboard-mobile-nav-drawer .dashboard-dark-mode-toggle .dashboard-dark-mode-icon,
+html:not(.dark) #dashboard-mobile-nav-drawer .dashboard-dark-mode-toggle .dashboard-dark-mode-label {
+    color: var(--dashboard-ink) !important;
+}
+
+html:not(.dark) #main-nav .dashboard-dark-mode-toggle .dashboard-dark-mode-switch,
+html:not(.dark) #dashboard-mobile-nav-drawer .dashboard-dark-mode-toggle .dashboard-dark-mode-switch {
+    background: var(--dashboard-ink) !important;
+    border-color: rgba(22, 21, 31, .45) !important;
+}
+
+html:not(.dark) #main-nav .dashboard-dark-mode-toggle .dashboard-dark-mode-switch > .dashboard-dark-mode-icon,
+html:not(.dark) #dashboard-mobile-nav-drawer .dashboard-dark-mode-toggle .dashboard-dark-mode-switch > .dashboard-dark-mode-icon {
+    color: var(--dashboard-cream) !important;
+}
+
+html:not(.dark) #main-nav .dashboard-dark-mode-toggle .dashboard-dark-mode-thumb,
+html:not(.dark) #dashboard-mobile-nav-drawer .dashboard-dark-mode-toggle .dashboard-dark-mode-thumb {
+    background: var(--dashboard-cream-soft) !important;
+    border: 1px solid rgba(22, 21, 31, .25);
+}
+
+html.dark #main-nav .dashboard-dark-mode-toggle,
+html.dark #dashboard-mobile-nav-drawer .dashboard-dark-mode-toggle {
+    color: var(--dashboard-cream) !important;
+    background: rgba(250, 246, 236, .06) !important;
+    border-color: rgba(250, 246, 236, .2) !important;
+}
+
+html.dark #main-nav .dashboard-dark-mode-toggle:hover,
+html.dark #dashboard-mobile-nav-drawer .dashboard-dark-mode-toggle:hover {
+    color: var(--dashboard-cream) !important;
+    background: rgba(250, 246, 236, .12) !important;
+}
+
+html.dark #main-nav .dashboard-dark-mode-toggle .dashboard-dark-mode-copy,
+html.dark #main-nav .dashboard-dark-mode-toggle .dashboard-dark-mode-icon,
+html.dark #main-nav .dashboard-dark-mode-toggle .dashboard-dark-mode-label,
+html.dark #dashboard-mobile-nav-drawer .dashboard-dark-mode-toggle .dashboard-dark-mode-copy,
+html.dark #dashboard-mobile-nav-drawer .dashboard-dark-mode-toggle .dashboard-dark-mode-icon,
+html.dark #dashboard-mobile-nav-drawer .dashboard-dark-mode-toggle .dashboard-dark-mode-label {
+    color: var(--dashboard-cream) !important;
+}
+
+html.dark #main-nav .dashboard-dark-mode-toggle .dashboard-dark-mode-switch,
+html.dark #dashboard-mobile-nav-drawer .dashboard-dark-mode-toggle .dashboard-dark-mode-switch {
+    background: rgba(22, 21, 31, .55) !important;
+    border-color: rgba(250, 246, 236, .35) !important;
+}
+
+html.dark #main-nav .dashboard-dark-mode-toggle .dashboard-dark-mode-switch > .dashboard-dark-mode-icon,
+html.dark #dashboard-mobile-nav-drawer .dashboard-dark-mode-toggle .dashboard-dark-mode-switch > .dashboard-dark-mode-icon {
+    color: var(--dashboard-cream) !important;
+}
+
+html.dark #main-nav .dashboard-dark-mode-toggle .dashboard-dark-mode-thumb,
+html.dark #dashboard-mobile-nav-drawer .dashboard-dark-mode-toggle .dashboard-dark-mode-thumb {
+    background: var(--dashboard-surface-raised) !important;
+    border: 1px solid rgba(250, 246, 236, .25);
 }
