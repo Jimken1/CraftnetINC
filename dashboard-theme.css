@@ -300,6 +300,28 @@ html.dark #dashboard-mobile-nav-drawer { background: #242230; }
 html.dark #dashboard-layout > header > div:first-child { background: var(--dark-bg-secondary) !important; }
 html.dark .dashboard-dark-mode-toggle { color: var(--dashboard-cream) !important; }
 
+#notification-panel {
+    overflow: hidden;
+}
+
+#notification-list {
+    max-height: 26rem;
+    overflow-y: auto;
+}
+
+@media (max-width: 767px) {
+    #notification-panel {
+        right: 0;
+        width: min(92vw, 24rem);
+        max-width: calc(100vw - 1.5rem);
+        max-height: 70vh;
+    }
+
+    #notification-list {
+        max-height: calc(70vh - 4rem);
+    }
+}
+
 .dashboard-dark-mode-toggle {
     margin-top: auto !important;
     position: relative;

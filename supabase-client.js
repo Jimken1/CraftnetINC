@@ -40,7 +40,7 @@ try {
         ENV_CONFIG = {
             SUPABASE_URL: "https://xmffdlciwrvuycnsgezb.supabase.co",
             SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtZmZkbGNpd3J2dXljbnNnZXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwMjUzMzQsImV4cCI6MjA3MDYwMTMzNH0.bBPsRDAljy2WDkw9K6faOFDYrJ7F8EJT5F4cqdI4MQQ",
-            SITE_URL: "https://loverboy132.github.io",
+            SITE_URL: "https://craftnet.com.ng",
         };
     }
 }

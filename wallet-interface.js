@@ -16,7 +16,7 @@ try {
         ENV_CONFIG = {
             SUPABASE_URL: "https://xmffdlciwrvuycnsgezb.supabase.co",
             FLUTTERWAVE_FUNCTION_URL: "https://xmffdlciwrvuycnsgezb.functions.supabase.co/flutterwave-init-payment",
-            SITE_URL: "https://loverboy132.github.io",
+            SITE_URL: "https://craftnet.com.ng",
         };
     }
 }

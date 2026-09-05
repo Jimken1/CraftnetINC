@@ -1,5 +1,4 @@
-// dashboard-supabase.js - Fixed version
-console.log('📄 Dashboard script file loaded');
+// dashboard-supabase.js
 
 // Load ENV_CONFIG with fallback for production
 let ENV_CONFIG;
@@ -16,7 +15,7 @@ try {
             SUPABASE_URL: "https://xmffdlciwrvuycnsgezb.supabase.co",
             SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtZmZkbGNpd3J2dXljbnNnZXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwMjUzMzQsImV4cCI6MjA3MDYwMTMzNH0.bBPsRDAljy2WDkw9K6faOFDYrJ7F8EJT5F4cqdI4MQQ",
             FLUTTERWAVE_FUNCTION_URL: "https://xmffdlciwrvuycnsgezb.functions.supabase.co/flutterwave-init-payment",
-            SITE_URL: "https://loverboy132.github.io",
+            SITE_URL: "https://craftnet.com.ng",
         };
     }
 }
@@ -113,36 +112,11 @@ import {
     normalizeNotificationReadStatus,
 } from "./payment-notifications.js";
 
-// DEBUG: Direct inserts enabled for RLS debugging
-
 // PERMANENT FAIL-FAST GUARD
 window.__BLOCK_FINAL_SUBMISSION_WITHOUT_JOB_REQUEST_ID__ = true;
 
 // Latest-search-wins guard for apprentice/member search (prevents double render from overlapping requests)
 let activeSearchToken = 0;
-
-// Debug helper to check job visibility for troubleshooting
-async function debugCheckJobVisibility(jobRequestId) {
-  try {
-    console.log("DEBUG: checking job_requests visibility for", jobRequestId);
-    const { data: jr, error: e1 } = await supabase
-      .from('job_requests')
-      .select('id, assigned_apprentice_id, client_id, status')
-      .eq('id', jobRequestId)
-      .maybeSingle();
-    console.log("DEBUG job_requests result:", jr, e1);
-
-    console.log("DEBUG: checking jobs visibility for same id");
-    const { data: js, error: e2 } = await supabase
-      .from('jobs')
-      .select('id, apprentice_id, member_id, status')
-      .eq('id', jobRequestId)
-      .maybeSingle();
-    console.log("DEBUG jobs result:", js, e2);
-  } catch (err) {
-    console.error("debugCheckJobVisibility failed", err);
-  }
-}
 
 // --- DOM Elements ---
 const loadingScreen = document.getElementById("loading-screen");
@@ -1087,8 +1061,7 @@ const apprenticeContentTemplates = {
                             <span class="font-bold text-mint">₦${Number(stats.availableBalance || 0).toLocaleString()}</span>
                         </div>
                         <div class="flex space-x-2">
-                            <button class="flex-1 dashboard-action dashboard-action-mint py-2 px-4 rounded-lg text-sm font-medium" ${stats.availableBalance === 0 ? "disabled" : ""}>Withdraw All</button>
-                            <button class="flex-1 dashboard-action dashboard-action-primary py-2 px-4 rounded-lg text-sm font-medium" ${stats.availableBalance === 0 ? "disabled" : ""}>Custom Amount</button>
+                            <button type="button" data-dashboard-tab="wallet" class="flex-1 dashboard-action dashboard-action-mint py-2 px-4 rounded-lg text-sm font-medium">Open Wallet</button>
                         </div>
                     </div>
                     
@@ -3969,26 +3942,10 @@ document.addEventListener("click", async (e) => {
         }
     }
 
-    // Withdrawal handler
-    if (e.target.textContent === "Withdraw All") {
+    // Route earnings users to the real wallet withdrawal workflow.
+    if (e.target.closest("[data-dashboard-tab=\"wallet\"]")) {
         e.preventDefault();
-        if (
-            confirm("Withdraw your entire available balance (₦1,920,000.00)?")
-        ) {
-            e.target.textContent = "Processing...";
-            e.target.disabled = true;
-
-            // Simulate processing
-            setTimeout(() => {
-                e.target.textContent = "Withdrawal Successful";
-                e.target.classList.remove("dashboard-action-mint");
-                e.target.classList.add("bg-gray-400");
-                showNotification(
-                    "Withdrawal processed successfully! Funds will be available in 2-3 business days.",
-                    "success"
-                );
-            }, 2000);
-        }
+        document.querySelector('#main-nav [data-tab="wallet"]')?.click();
     }
 
     // Event registration handler
@@ -5847,7 +5804,7 @@ async function renderDashboard(user, userData) {
         if (mainContent) {
             mainContent.innerHTML = `
                 <div class="text-center py-12">
-                    <p class="text-red-500 mb-4">Error loading dashboard: ${error.message || "Unknown error"}</p>
+                    <p class="text-red-500 mb-4">Unable to load the dashboard. Please try again.</p>
                     <p class="text-gray-500 text-sm mb-4">Check browser console for details</p>
                     <button onclick="location.reload()" class="dashboard-action dashboard-action-primary px-4 py-2 rounded-lg">
                         Refresh Page
@@ -5859,7 +5816,7 @@ async function renderDashboard(user, userData) {
             document.body.innerHTML = `
                 <div class="min-h-screen bg-gray-100 p-8">
                     <div class="text-center py-12">
-                        <p class="text-red-500 mb-4">Error loading dashboard: ${error.message || "Unknown error"}</p>
+                        <p class="text-red-500 mb-4">Unable to load the dashboard. Please try again.</p>
                         <button onclick="location.reload()" class="dashboard-action dashboard-action-primary px-4 py-2 rounded-lg">
                             Refresh Page
                         </button>
@@ -6810,10 +6767,7 @@ async function initializeDashboard() {
             return;
         }
 
-        console.log('✅ Session found, user:', session.user.email);
-
         const user = session.user;
-        console.log("User authenticated:", user.id);
 
         // Get user profile
         let userData;
@@ -6836,7 +6790,7 @@ async function initializeDashboard() {
             }
             mainContent.innerHTML = `
                 <div class="text-center py-12">
-                    <p class="text-red-500 mb-4">Error loading profile: ${error.message}</p>
+                    <p class="text-red-500 mb-4">Unable to load your profile. Please try again.</p>
                     <button onclick="location.reload()" class="dashboard-action dashboard-action-primary px-4 py-2 rounded-lg">
                         Retry
                     </button>
@@ -6946,7 +6900,7 @@ async function initializeDashboard() {
             if (mainContent) {
                 mainContent.innerHTML = `
                     <div class="text-center py-12">
-                        <p class="text-red-500 mb-4">Error rendering dashboard: ${error.message || "Unknown error"}</p>
+                        <p class="text-red-500 mb-4">Unable to render the dashboard. Please try again.</p>
                         <p class="text-gray-500 text-sm mb-4">Check browser console for details</p>
                         <button onclick="location.reload()" class="dashboard-action dashboard-action-primary px-4 py-2 rounded-lg">
                             Retry
@@ -6992,7 +6946,7 @@ async function initializeDashboard() {
         if (mainContent) {
             mainContent.innerHTML = `
                 <div class="text-center py-12">
-                    <p class="text-red-500 mb-4">Error loading dashboard: ${error.message || "Unknown error"}</p>
+                    <p class="text-red-500 mb-4">Unable to load the dashboard. Please try again.</p>
                     <p class="text-gray-500 text-sm mb-4">Please check the browser console for more details</p>
                     <button onclick="location.reload()" class="dashboard-action dashboard-action-primary px-4 py-2 rounded-lg">
                         Retry
@@ -7005,7 +6959,7 @@ async function initializeDashboard() {
                 <div class="min-h-screen bg-gray-100 p-8">
                     <div class="text-center py-12">
                         <h1 class="text-2xl font-bold mb-4">Dashboard Error</h1>
-                        <p class="text-red-500 mb-4">Error loading dashboard: ${error.message || "Unknown error"}</p>
+                        <p class="text-red-500 mb-4">Unable to load the dashboard. Please try again.</p>
                         <button onclick="location.reload()" class="dashboard-action dashboard-action-primary px-4 py-2 rounded-lg">
                             Refresh Page
                         </button>
@@ -7313,9 +7267,6 @@ async function initializeDashboardOnReady() {
     // Step 1: Check authentication
     console.log('🔐 Step 1: Checking authentication...');
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    console.log('📦 Session data:', session ? { userId: session.user?.id, email: session.user?.email } : null);
-    console.log('❌ Session error:', sessionError);
-    
     if (sessionError) {
       console.error('❌ Session error occurred:', sessionError);
       clearTimeout(timeoutId);
@@ -7328,9 +7279,6 @@ async function initializeDashboardOnReady() {
       window.location.href = './login-supabase.html';
       return;
     }
-    
-    console.log('✅ Session found for user:', session.user.email);
-    console.log('👤 User ID:', session.user.id);
     
     // Step 2: Get user profile/data
     console.log('👤 Step 2: Fetching user profile...');
@@ -7485,55 +7433,7 @@ async function initializeDashboardOnReady() {
       throw error;
     }
     
-    // Step 8: Load additional data
-    console.log('📊 Step 8: Loading additional dashboard components...');
-    
-    // Jobs
-    try {
-      console.log('🔄 Fetching jobs...');
-      const { data: jobs, error: jobsError } = await supabase
-        .from('jobs')
-        .select('*')
-        .eq('user_id', session.user.id);
-      
-      console.log('📦 Jobs data:', jobs ? `${jobs.length} jobs found` : 'null');
-      if (jobsError) console.warn('⚠️ Jobs error:', jobsError.message);
-    } catch (err) {
-      console.warn('⚠️ Could not fetch jobs:', err.message);
-    }
-    
-    // Wallet
-    try {
-      console.log('🔄 Fetching wallet...');
-      const { data: wallet, error: walletError } = await supabase
-        .from('wallet')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .single();
-      
-      console.log('📦 Wallet data:', wallet ? 'Found' : 'null');
-      if (walletError) console.warn('⚠️ Wallet error:', walletError.message);
-    } catch (err) {
-      console.warn('⚠️ Could not fetch wallet:', err.message);
-    }
-    
-    // Transactions
-    try {
-      console.log('🔄 Fetching transactions...');
-      const { data: transactions, error: txError } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      
-      console.log('📦 Transactions data:', transactions ? `${transactions.length} transactions found` : 'null');
-      if (txError) console.warn('⚠️ Transactions error:', txError.message);
-    } catch (err) {
-      console.warn('⚠️ Could not fetch transactions:', err.message);
-    }
-    
-    // Start real-time updates for apprentices
+        // Start real-time updates for apprentices
     if (userProfile.role === "apprentice") {
       console.log('🔄 Starting real-time updates for apprentice...');
       try {
