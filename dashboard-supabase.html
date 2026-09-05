@@ -397,7 +397,7 @@
                 width: 100%;
                 max-width: 100%;
                 overflow-x: hidden;
-                color: #0f172a;
+                color: var(--dashboard-text-primary);
             }
 
             #main-content {
@@ -414,9 +414,9 @@
             }
 
             #dashboard-layout .bg-white {
-                border: 1px solid #e2e8f0;
+                border: 1px solid var(--dashboard-border);
                 border-radius: 14px;
-                box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+                box-shadow: var(--dashboard-card-shadow);
             }
 
             #dashboard-layout .text-xs,
@@ -530,7 +530,7 @@
             }
 
             #dashboard-layout {
-                background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+                background: var(--dashboard-bg) !important;
             }
 
             /* Sticky header offset
@@ -565,10 +565,10 @@
             #main-content .active-jobs-list > div,
             #main-content .personal-request-list > div,
             #main-content .job-request-card {
-                background: #ffffff;
+                background: var(--dashboard-surface) !important;
                 border-radius: 16px !important;
-                border: 1px solid rgba(0, 0, 0, 0.05) !important;
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04) !important;
+                border: 1px solid var(--dashboard-border) !important;
+                box-shadow: var(--dashboard-card-shadow) !important;
                 transition: all 0.2s ease;
             }
 
@@ -579,7 +579,7 @@
             #main-content .active-jobs-list > div:hover,
             #main-content .personal-request-list > div:hover,
             #main-content .job-request-card:hover {
-                box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08) !important;
+                box-shadow: var(--dashboard-soft-shadow) !important;
             }
 
             /* Clean list item cards for jobs/applications */
@@ -606,23 +606,23 @@
             }
 
             #main-content .text-gray-600 {
-                color: #475569 !important;
+                color: var(--dashboard-text-secondary) !important;
             }
 
             #main-content .text-gray-500 {
-                color: #64748b !important;
+                color: var(--dashboard-text-secondary) !important;
             }
 
             /* Typography hierarchy: quieter labels, stronger values */
             #main-content .text-sm.text-gray-500,
             #main-content .text-xs.text-gray-500 {
-                color: #64748b !important;
+                color: var(--dashboard-text-secondary) !important;
                 font-weight: 500;
             }
 
             #main-content .text-2xl.font-bold,
             #main-content .text-3xl.font-bold {
-                color: #0f172a !important;
+                color: var(--dashboard-text-primary) !important;
                 letter-spacing: -0.02em;
             }
 
@@ -737,7 +737,7 @@
 
             /* Dark mode compatibility for new visual language */
             html.dark #dashboard-layout {
-                background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+                background: var(--dashboard-bg) !important;
             }
 
             html.dark #main-content .bg-white,
@@ -746,17 +746,17 @@
             html.dark #main-content .active-jobs-list > div,
             html.dark #main-content .personal-request-list > div,
             html.dark #main-content .job-request-card {
-                background: #1e293b !important;
-                border-color: rgba(148, 163, 184, 0.24) !important;
-                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3) !important;
+                background: var(--dashboard-surface) !important;
+                border-color: var(--dashboard-border) !important;
+                box-shadow: var(--dashboard-card-shadow) !important;
             }
 
             html.dark #main-content .text-gray-600 {
-                color: #cbd5e1 !important;
+                color: var(--dashboard-text-secondary) !important;
             }
 
             html.dark #main-content .text-gray-500 {
-                color: #94a3b8 !important;
+                color: var(--dashboard-text-secondary) !important;
             }
         </style>
     </head>

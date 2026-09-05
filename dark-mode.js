@@ -1,6 +1,6 @@
 /**
- * Brilliant Dark Mode Toggle for Craftiva
- * Handles dark mode state, persistence, and smooth transitions
+ * Craftnet theme manager.
+ * Applies the saved theme before the page paints, then owns the toggle UI.
  */
 
 class DarkModeManager {
@@ -10,25 +10,26 @@ class DarkModeManager {
     }
 
     init() {
-        // Check for saved preference or default to system preference
         const savedPreference = localStorage.getItem(this.storageKey);
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        
-        if (savedPreference === null) {
-            // No saved preference, use system preference
-            this.setDarkMode(prefersDark);
+        this.applyTheme(savedPreference === null ? prefersDark : savedPreference === 'true');
+        this.bindToggleEvents();
+
+        const setupControls = () => {
+            this.createToggleButton();
+            this.updateIcon();
+        };
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupControls, { once: true });
         } else {
-            // Use saved preference
-            this.setDarkMode(savedPreference === 'true');
+            setupControls();
         }
 
-        this.bindToggleEvents();
-        this.createToggleButton();
-        
         // Listen for system preference changes (only if no manual preference is set)
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
             if (localStorage.getItem(this.storageKey) === null) {
-                this.setDarkMode(e.matches);
+                this.applyTheme(e.matches);
+                this.updateIcon();
             }
         });
     }
@@ -52,8 +53,7 @@ class DarkModeManager {
         const existingToggles = document.querySelectorAll('.dark-mode-toggle');
         if (existingToggles.length > 0) {
             existingToggles.forEach((toggle) => {
-                toggle.setAttribute('aria-label', 'Toggle dark mode');
-                toggle.setAttribute('title', 'Toggle dark mode');
+                toggle.type = 'button';
             });
             this.updateIcon();
             return;
@@ -65,10 +65,9 @@ class DarkModeManager {
         const toggle = document.createElement('button');
         toggle.id = 'dark-mode-toggle';
         toggle.className = 'dark-mode-toggle';
-        toggle.setAttribute('aria-label', 'Toggle dark mode');
-        toggle.setAttribute('title', 'Toggle dark mode');
-        toggle.innerHTML = this.getIcon();
+        toggle.type = 'button';
         actionsContainer.appendChild(toggle);
+        this.updateIcon();
     }
 
     ensureDashboardToggle(nav) {
@@ -77,14 +76,13 @@ class DarkModeManager {
         const toggle = document.createElement('button');
         toggle.type = 'button';
         toggle.className = 'nav-link dashboard-dark-mode-toggle dark-mode-toggle';
-        toggle.setAttribute('aria-label', 'Toggle dark mode');
-        toggle.setAttribute('title', 'Toggle dark mode');
+        toggle.title = 'Switch theme';
         nav.appendChild(toggle);
         this.updateIcon();
     }
 
-    getIcon() {
-        const isDark = document.documentElement.classList.contains('dark');
+    getIcon(darkState = this.isDarkMode()) {
+        const isDark = darkState;
         if (isDark) {
             // Moon icon for dark mode (clicking will switch to light)
             return `
@@ -105,11 +103,21 @@ class DarkModeManager {
     updateIcon() {
         const toggles = document.querySelectorAll('.dark-mode-toggle');
         toggles.forEach((toggle) => {
+            const isDark = this.isDarkMode();
+            toggle.setAttribute('aria-label', isDark ? 'Switch to light theme' : 'Switch to dark theme');
+            toggle.setAttribute('aria-pressed', String(isDark));
             if (toggle.classList.contains('dashboard-dark-mode-toggle')) {
                 toggle.innerHTML = `
-                    <span class="dashboard-dark-mode-icon" aria-hidden="true">${this.getIcon()}</span>
-                    <span class="dashboard-dark-mode-label">${this.isDarkMode() ? 'Light Mode' : 'Dark Mode'}</span>
-                    <span class="dashboard-dark-mode-state" aria-hidden="true"></span>
+                    <span class="dashboard-dark-mode-copy">
+                        <span class="dashboard-dark-mode-icon" aria-hidden="true">${isDark ? this.getIcon(true) : this.getIcon(false)}</span>
+                        <span class="dashboard-dark-mode-label">${isDark ? 'Dark' : 'Light'}</span>
+                    </span>
+                    <span class="dashboard-dark-mode-switch" aria-hidden="true">
+                        <span class="dashboard-dark-mode-icon dashboard-dark-mode-icon-sun">${this.getIcon(false)}</span>
+                        <span class="dashboard-dark-mode-thumb">
+                        </span>
+                        <span class="dashboard-dark-mode-icon dashboard-dark-mode-icon-moon">${this.getIcon(true)}</span>
+                    </span>
                 `;
             } else {
                 toggle.innerHTML = this.getIcon();
@@ -118,27 +126,20 @@ class DarkModeManager {
     }
 
     setDarkMode(enabled) {
-        if (enabled) {
-            document.documentElement.classList.add('dark');
-            localStorage.setItem(this.storageKey, 'true');
-        } else {
-            document.documentElement.classList.remove('dark');
-            localStorage.setItem(this.storageKey, 'false');
-        }
+        this.applyTheme(enabled);
+        localStorage.setItem(this.storageKey, String(enabled));
         this.updateIcon();
+    }
+
+    applyTheme(enabled) {
+        document.documentElement.classList.toggle('dark', enabled);
+        document.documentElement.style.colorScheme = enabled ? 'dark' : 'light';
     }
 
     toggle(sourceToggle) {
         const isDark = document.documentElement.classList.contains('dark');
         this.setDarkMode(!isDark);
         
-        // Add a subtle animation effect
-        if (sourceToggle && !sourceToggle.classList.contains('dashboard-dark-mode-toggle')) {
-            sourceToggle.style.transform = 'scale(0.9)';
-            setTimeout(() => {
-                sourceToggle.style.transform = '';
-            }, 150);
-        }
     }
 
     isDarkMode() {
@@ -146,14 +147,8 @@ class DarkModeManager {
     }
 }
 
-// Initialize dark mode when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        window.darkMode = new DarkModeManager();
-    });
-} else {
-    window.darkMode = new DarkModeManager();
-}
+// Construct immediately so the saved theme is applied before the first paint.
+window.darkMode = new DarkModeManager();
 
 // Export for module usage
 if (typeof module !== 'undefined' && module.exports) {
