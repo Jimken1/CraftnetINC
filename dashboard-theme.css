@@ -133,7 +133,7 @@ html.dark #dashboard-layout #main-content .text-3xl.font-bold {
 .dashboard-welcome {
     padding: 1.5rem;
     border-radius: var(--dashboard-soft-radius);
-    background: var(--dashboard-section-lavender);
+    background: transparent;
 }
 
 .dashboard-welcome h1,
@@ -407,14 +407,13 @@ html.dark .status-badge-pink { background: rgba(252, 225, 232, 0.12); color: #f5
     #dashboard-layout > header > div:first-child { background: var(--dashboard-surface) !important; }
 }
 
-html.dark .dashboard-welcome { background: #302d48; }
+html.dark .dashboard-welcome { background: transparent; }
 html.dark .empty-state-dashed { border-color: rgba(250, 246, 236, .28); color: #c9c4d5; }
 html.dark .stat-card,
 html.dark .recent-activity-panel { border-color: rgba(250, 246, 236, .1); }
 html.dark #dashboard-mobile-nav-drawer { background: #242230; }
 html.dark #dashboard-layout > header > div:first-child { background: var(--dark-bg-secondary) !important; }
 html.dark .dashboard-dark-mode-toggle { color: var(--dashboard-cream) !important; }
-html.dark .dashboard-welcome { background: var(--dashboard-surface-raised); }
 html.dark .stat-icon-mint,
 html.dark .stat-icon-peach,
 html.dark .stat-icon-lavender,
